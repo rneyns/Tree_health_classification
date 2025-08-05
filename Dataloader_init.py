@@ -4,7 +4,11 @@ Dataloader_init.py
 This module contains the functions related to getting the arguments from the user.
 
 Functions:
-    - get_arguments: argument parser requesting the necessary hyperparameters from the user
+    - create_DOY: Create the day of the year vector to indicate this as extra info to the embeddings module
+    - merge_bands: The reflectances are stored in separate files for each band, so they need to be merged before they can be used in the embeddings module
+    - dataloader_init: The initialization of the dataloader
+    - prepare_predictloader: A separate function to initialize the dataloader for prediction
+    -
 
 Author: Robbe Neyns
 Created: Thu Jul 31 10:38:11 2023
@@ -15,6 +19,8 @@ import numpy as np
 from Utils import data_prep, DataSetCatCon, data_prep_premade
 from Utils import train_val_test_div_2
 from Utils import resample
+from torch.utils.data import DataLoader
+import torch
 
 
 def create_DOY(dataset):
@@ -110,27 +116,27 @@ def dataloader_init(args):
     print(f"Number of dates: {nfeat}; and number of bands: {nbands}")
 
     if nfeat > 100:
-        opt.embedding_size = min(4, opt.embedding_size)
+        args.embedding_size = min(4, opt.embedding_size)
         # The batch size needs to be at least  to make optimal use of the intersample attention
-        opt.batchsize = min(64, opt.batchsize)
-    if opt.attentiontype != 'col':
-        opt.transformer_depth = 1
-        opt.attention_heads = 4
-        opt.attention_dropout = 0.8
-        opt.embedding_size = 16
-        if opt.optimizer == 'SGD':
-            opt.ff_dropout = 0.4
-            opt.lr = 0.01
+        args.batchsize = min(64, opt.batchsize)
+    if args.attentiontype != 'col':
+        args.transformer_depth = 1
+        args.attention_heads = 4
+        args.attention_dropout = 0.8
+        args.embedding_size = 16
+        if args.optimizer == 'SGD':
+            args.ff_dropout = 0.4
+            args.lr = 0.01
         else:
-            opt.ff_dropout = 0.8
+            args.ff_dropout = 0.8
 
-    train_ds = DataSetCatCon(X_train, y_train, DOY_train, ids_train, cat_idxs, args.dtask), continuous_mean_std)
+    train_ds = DataSetCatCon(X_train, y_train, DOY_train, ids_train, cat_idxs, args.dtask)#, continuous_mean_std)
     trainloader = DataLoader(train_ds, batch_size=args.batchsize, shuffle=True, num_workers=1)
 
-    valid_ds = DataSetCatCon(X_valid, y_valid, DOY_valid, ids_valid, cat_idxs, args.dtask), continuous_mean_std)
+    valid_ds = DataSetCatCon(X_valid, y_valid, DOY_valid, ids_valid, cat_idxs, args.dtask)#, continuous_mean_std)
     validloader = DataLoader(valid_ds, batch_size=args.batchsize, shuffle=False, num_workers=1)
 
-    test_ds = DataSetCatCon(X_test, y_test, DOY_valid, ids_test, cat_idxs, args.dtask), continuous_mean_std)
+    test_ds = DataSetCatCon(X_test, y_test, DOY_valid, ids_test, cat_idxs, args.dtask)#, continuous_mean_std)
     testloader = DataLoader(test_ds, batch_size=args.batchsize, shuffle=False, num_workers=1)
 
 
@@ -138,10 +144,9 @@ def dataloader_init(args):
     y_dim = len(np.unique(y_train['data'][:, 0]))
     print(y_dim)
 
-    cat_dims = np.append(np.array([1]), np.array(cat_dims)).astype(
-        int)  # Appending 1 for CLS token, this is later used to generate embeddings.
+    cat_dims = np.append(np.array([1]), np.array(cat_dims)).astype(int)  # Appending 1 for CLS token, this is later used to generate embeddings.
 
-    return trainloader, validloader, testloader, cat_dims, y_dim, DOY, w0_norm, w1_norm
+    return trainloader, validloader, testloader, cat_dims, con_idxs, y_dim, DOY, w0_norm, w1_norm, args
 
 def prepare_predictloader(args):
     ### configuring the dataloader for the predict step (needs to happen before the undersampling)

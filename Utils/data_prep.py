@@ -11,8 +11,7 @@ from sklearn.preprocessing import LabelEncoder
 import pandas as pd
 from torch.utils.data import Dataset
 from torchvision import transforms
-from PIL import Image
-
+import rasterio as rs
 
 def simple_lapsed_time(text, lapsed):
     hours, rem = divmod(lapsed, 3600)
@@ -250,7 +249,25 @@ class DataSetCatCon(Dataset):
         return len(self.y)
     
     def __getitem__(self, idx):
-        return self.ids[idx], self.DOY[idx], np.concatenate((self.cls[idx], self.X1[idx])), self.X2[idx], int(self.y[idx])    
+        # load the images
+        image = rs.open(f"{self.image_dir}/T{int(self.ids[idx])}.tif")
+        image = image.read()
+        # Build in protection for images patches that differ slightly in size
+        shape = image.shape
+
+        add_row_1 = 0
+        add_row_2 = 0
+        if int(shape[1]) < int(self.n_rows):
+            add_row_1 = self.n_rows - shape[1]
+        if int(shape[2]) < int(self.n_rows):
+            add_row_2 = self.n_rows - shape[2]
+        image = np.pad(image, ((0, 0), (0, add_row_1), (0, add_row_2)))
+        image = image.reshape(self.n_rows, self.n_rows, 4)
+
+        image = transforms.functional.to_tensor(image)
+
+        return image, self.ids[idx], self.DOY[idx], np.concatenate((self.cls[idx], self.X1[idx])), self.X2[idx], int(self.y[idx])
+
     def get_size_X(self):
         return len(self.X2[1])
     
