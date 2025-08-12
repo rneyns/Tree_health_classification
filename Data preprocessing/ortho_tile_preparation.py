@@ -34,7 +34,8 @@ os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
 # List all tile folders from VIS
 tile_folders = [f for f in os.listdir(VIS_ROOT) if f.startswith("tile_")]
-print('hallo')
+print(tile_folders)
+
 for tile in tile_folders:
     vis_tile_path = os.path.join(VIS_ROOT, tile)
     nir_tile_path = os.path.join(NIR_ROOT, tile)
