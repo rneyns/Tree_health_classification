@@ -22,22 +22,24 @@ import pandas as pd
 from datetime import datetime
 
 # --- USER INPUTS ---
-image_folder = "path/to/planetscope/images"
-tree_points_file = "path/to/your/tree_points.shp"  # or .geojson
-output_folder = "path/to/output_csvs"
+image_folder = '/Users/robbe_neyns/Library/CloudStorage/OneDrive-VrijeUniversiteitBrussel/Documenten/Research/UHI_tree health/Data analysis/PlanetScope preprocessing/Old PlanetScope data'
+tree_points_file = '/Users/robbe_neyns/Library/CloudStorage/OneDrive-VrijeUniversiteitBrussel/Documenten/Research/UHI_tree health/Data analysis/Tree mapping/Tree locations/Brussels Environment Layers/mobiliteit_shape_manual_adjustment_project/mobiliteit_shape_manual_adjustment_X_Y.shp'  # or .geojson
+output_folder = '/Users/robbe_neyns/Library/CloudStorage/OneDrive-VrijeUniversiteitBrussel/Documenten/Research/UHI_tree health/Data analysis/Tree mapping'
 
 # Species string-to-code mapping
 species_map = {
-    "oak": 1,
-    "pine": 2,
-    "maple": 3,
+    "Platanus x acerifolia": 1,
+    "Tilia x euchlora": 2,
+    "Aesculus hippocastanum": 3,
+    "Acer pseudoplatanus": 4,
+    "Acer platanoides": 5,
 }
 
 # --- LOAD TREE POINTS ---
 trees = gpd.read_file(tree_points_file)
 
 # Add species code column if species name exists
-if "species" in trees.columns:
+if "essence" in trees.columns:
     def species_to_code(name):
         if pd.isna(name):
             return None
@@ -45,13 +47,13 @@ if "species" in trees.columns:
             if key.lower() in name.lower():
                 return code
         return None
-    trees["species_code"] = trees["species"].apply(species_to_code)
+    trees["species_code"] = trees["essence"].apply(species_to_code)
 else:
-    trees["species_code"] = None
+    trees["species_code"] = 0
 
 # Ensure tree ID exists
-if "id" not in trees.columns:
-    trees["id"] = range(len(trees))
+if "field_1" not in trees.columns:
+    trees["field_1"] = range(len(trees))
 
 # Prepare data structure for each band
 band_data = {}  # {band_index: pd.DataFrame}
@@ -84,7 +86,7 @@ for filename in os.listdir(image_folder):
                     if b not in band_data:
                         # Initialize DataFrame
                         band_data[b] = pd.DataFrame({
-                            "tree_id": trees["id"],
+                            "tree_id": trees["field_1"],
                             "species_code": trees["species_code"]
                         })
                     # Use DOY as column name
