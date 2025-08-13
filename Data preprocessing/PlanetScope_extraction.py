@@ -42,14 +42,14 @@ trees = gpd.read_file(tree_points_file)
 if "essence" in trees.columns:
     def species_to_code(name):
         if pd.isna(name):
-            return None
+            return 0
         for key, code in species_map.items():
             if key.lower() in name.lower():
                 return code
-        return None
+        return 0
     trees["species_code"] = trees["essence"].apply(species_to_code)
 else:
-    trees["species_code"] = 0
+    trees["species_code"] = 0.0
 
 # Ensure tree ID exists
 if "field_1" not in trees.columns:
