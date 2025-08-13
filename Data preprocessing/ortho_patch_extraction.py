@@ -107,7 +107,8 @@ def process_coordinates(shapefile, tiles_folder, output_folder, tile_extents):
     for _, row in gdf.iterrows():
         central_lon = row['x']  # Assumes column name for longitude is 'longitude'
         central_lat = row['y']  # Assumes column name for latitude is 'latitude'
-        id = row['field_1']
+        #id = row['field_1']
+        id = row['crown_id']
         tile_id = get_tile_for_coordinates(tile_extents, central_lon, central_lat)
 
         if tile_id:
@@ -125,8 +126,9 @@ def process_coordinates(shapefile, tiles_folder, output_folder, tile_extents):
 
 if __name__ == "__main__":
     shapefile = '/Users/robbe_neyns/Library/CloudStorage/OneDrive-VrijeUniversiteitBrussel/Documenten/Research/UHI_tree health/Data analysis/Tree mapping/Tree locations/Brussels Environment Layers/mobiliteit_shape_manual_adjustment_project/mobiliteit_shape_manual_adjustment_X_Y.shp'  # Path to the shapefile with coordinates
+    shapefile = '/Users/robbe_neyns/Library/CloudStorage/OneDrive-VrijeUniversiteitBrussel/Documenten/Research/UHI_tree health/Data analysis/Tree mapping/Tree locations/flai layers/tree_centroids_x_y_lambert.shp'  # Path to the shapefile with coordinates
     tiles_folder = "/Users/robbe_neyns/Documents/research/UHI tree health/merged_tiles"  # Path to the folder containing the ortho tiles
-    output_folder = "/Users/robbe_neyns/Documents/research/UHI tree health/output_patches"  # Path where the patches will be saved
+    output_folder = "/Users/robbe_neyns/Documents/research/UHI tree health/output_patches_apply"  # Path where the patches will be saved
     extent_library_path = "tile_extents.pkl"  # Path to save/load the tile extents library
 
     # Create output folder if it doesn't exist
