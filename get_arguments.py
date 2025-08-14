@@ -16,7 +16,7 @@ def get_arguments():
 
     parser.add_argument("-i", "--images", metavar="IMAGES", help="Path to the folder with the orthophoto patches")
     parser.add_argument("-multi", "--multiTemp", metavar="MULTI_TEMPORAL",
-                        help="Path to the table with the multi_temporal_data")
+                        help="Path to the folder with the multi_temporal_data for each band")
     parser.add_argument("-lh", "--labelHeader", metavar="LABEL_HEADER",
                         help="Name of the column that contains the class label (binary)")
     parser.add_argument("-idh", "--IDHeader", metavar="ID_HEADER",
@@ -27,20 +27,11 @@ def get_arguments():
                         type=int)
     parser.add_argument("-nc", "--numClasses", metavar="NUMBER_CLASSES",
                         help="Number of classes that will be predicted by the model", type=int)
-    parser.add_argument("-mlpType", "--mlpType", metavar="TYPE_OF_MLP",
-                        help="Two versions of the mlp are available to run the model, a simple version without depth separable convolution and a more complex version with. True means using the simple version",
-                        type=bool, default=True)
+
     parser.add_argument("-ResNetV", "--ResNetV", metavar="VERSION_OF_RESNET",
                         help="It is possible to train the network with ResNet18 (0), ResNet34 (1), ResNet50 (2), ResNet101 (3) and ResNet152 (4). To choose a model, please specify the associated number",
-                        type=int, default=0)
-    parser.add_argument("-dem", "--DEM", metavar="INCLUSION_DEM",
-                        help="If this value is set to True, dem patches can be included to train the network",
-                        type=bool, default=False)
-    parser.add_argument("-dem_dir", "--DEM_dir", metavar="DEM_directory",
-                        help="Path to the directory with the dem patches", default=None)
+                        type=int, default=1)
 
-    parser.add_argument('--dataset', required=True, type=str,
-                        help='VGGSound, KineticSound, CREMAD, AVE, TREES')
     parser.add_argument('--modulation', default='OGM_GE', type=str,
                         choices=['Normal', 'OGM', 'OGM_GE', 'Acc'])
     parser.add_argument('--fusion_method', default='concat', type=str,
@@ -64,7 +55,7 @@ def get_arguments():
     parser.add_argument('--ckpt_path', default='ckpt', type=str, help='path to save trained models')
     parser.add_argument('--train', default=True, help='turn on train mode')
 
-    parser.add_argument('--use_tensorboard', action='store_true', help='whether to visualize')
+
     parser.add_argument('--logs_path', default='logs', type=str, help='path to save tensorboard logs')
 
     parser.add_argument('--random_seed', default=0, type=int)
@@ -72,8 +63,6 @@ def get_arguments():
     parser.add_argument('--gpu', type=int, default=0)  # gpu
     parser.add_argument('--no_cuda', action='store_true', help='Disable CUDA')
 
-    parser.add_argument('--predset_id', required=True, type=str)
-    parser.add_argument('--vision_dset', action='store_true')
     parser.add_argument('--task', required=True, default='clf', type=str,
                         choices=['binary', 'multiclass', 'regression', 'clf'])
     parser.add_argument('--cont_embeddings', default='MLP', type=str, choices=['MLP', 'Noemb', 'pos_singleMLP'])

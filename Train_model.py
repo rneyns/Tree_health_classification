@@ -135,5 +135,3 @@ if args.train:
                 '/theia/scratch/brussel/104/vsc10421/model{}_epoch.pt'.format(args.numClasses))
             print('Saved model!!!')
 
-if __name__ == "__main__":
-    main()
