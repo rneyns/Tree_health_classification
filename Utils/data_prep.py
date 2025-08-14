@@ -216,7 +216,7 @@ def data_prep_premade(ds_id, DOY, args, seed, task, pretraining=False):
 
 
 class DataSetCatCon(Dataset):
-    def __init__(self, X, Y, DOY, ids, cat_cols,task='clf',continuous_mean_std=None):
+    def __init__(self, X, Y, DOY, ids, cat_cols, args, task='clf',continuous_mean_std=None):
         
         cat_cols = list(cat_cols)
         X_mask =  X['mask'].copy()
@@ -224,7 +224,7 @@ class DataSetCatCon(Dataset):
         #self.ids = ids['id']
         self.n_rows = 241
         self.DOY = DOY['data']
-        self.image_dir = "/theia/scratch/brussel/104/vsc10421/MAE_experiments"
+        self.image_dir = args.images
         print(f"X shape before con_cols: {X.shape}")
         con_cols = list(set(np.arange(X.shape[1])) - set(cat_cols))
         self.X1 = X[:,cat_cols].copy().astype(np.int64) #categorical columns
@@ -250,7 +250,7 @@ class DataSetCatCon(Dataset):
     
     def __getitem__(self, idx):
         # load the images
-        image = rs.open(f"{self.image_dir}/T{int(self.ids[idx])}.tif")
+        image = rs.open(f"{self.image_dir}/{int(self.ids[idx])}.tif")
         image = image.read()
         # Build in protection for images patches that differ slightly in size
         shape = image.shape

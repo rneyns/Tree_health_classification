@@ -129,13 +129,13 @@ def dataloader_init(args):
         else:
             args.ff_dropout = 0.8
 
-    train_ds = DataSetCatCon(X_train, y_train, DOY_train, ids_train, cat_idxs, 'clf')#, continuous_mean_std)
+    train_ds = DataSetCatCon(X_train, y_train, DOY_train, ids_train, cat_idxs, args,'clf')#, continuous_mean_std)
     trainloader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=1)
 
-    valid_ds = DataSetCatCon(X_valid, y_valid, DOY_valid, ids_valid, cat_idxs, 'clf')#, continuous_mean_std)
+    valid_ds = DataSetCatCon(X_valid, y_valid, DOY_valid, ids_valid, cat_idxs, args,'clf')#, continuous_mean_std)
     validloader = DataLoader(valid_ds, batch_size=args.batch_size, shuffle=False, num_workers=1)
 
-    test_ds = DataSetCatCon(X_test, y_test, DOY_valid, ids_test, cat_idxs, 'clf')#, continuous_mean_std)
+    test_ds = DataSetCatCon(X_test, y_test, DOY_valid, ids_test, cat_idxs, args,'clf')#, continuous_mean_std)
     testloader = DataLoader(test_ds, batch_size=args.batch_size, shuffle=False, num_workers=1)
 
 
@@ -156,5 +156,5 @@ def prepare_predictloader(args):
     # Create the predictloader
     # continuous_mean_std = np.array([train_mean,train_std]).astype(np.float32)
     ds = DataSetCatCon(X_train_pre, y_train_pre, DOY_train_pre, ids_train_pre, cat_idxs_pre,
-                        'clf')  # , continuous_mean_std=continuous_mean_std)
+                        args,'clf')  # , continuous_mean_std=continuous_mean_std)
     predictloader = DataLoader(ds, batch_size=args.batch_size, shuffle=False, num_workers=1)
