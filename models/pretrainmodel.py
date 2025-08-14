@@ -1,6 +1,5 @@
 from .model import *
-from Embed import *
-from Embed import Embedding
+from Utils.Embed import Embedding
 import numpy as np
 from .model import simple_MLP, RowColTransformer, Transformer
 import torch.nn as nn

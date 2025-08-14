@@ -10,7 +10,7 @@ import torch
 import torch.nn as nn
 
 import torchmetrics
-from fusion_modules import SumFusion, ConcatFusion, FiLM, GatedFusion
+from Utils.fusion_modules import SumFusion, ConcatFusion, FiLM, GatedFusion
 
 
 def conv3x3(in_planes, out_planes, stride=1):

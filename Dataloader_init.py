@@ -25,9 +25,7 @@ import torch
 
 def create_DOY(dataset):
     DOY = torch.from_numpy(np.array(
-        [[37], [45], [59], [71], [76], [78], [80], [82], [95], [99], [107], [108], [119], [123], [124], [128], [132],
-         [153], [160], [163], [165], [168], [187], [188], [195], [208], [223], [235], [243], [246], [248], [249], [257],
-         [270], [276], [281], [284], [297], [302], [322]]))
+        [[20], [44], [88], [108], [146], [179], [216], [240], [242], [270], [317], [321]]))
 
     DOY = DOY.repeat(len(dataset), 1, 1)
 
@@ -37,8 +35,8 @@ def create_DOY(dataset):
 def merge_bands(args):
     #The reflection of each band is in a separate csv file. This function merges them into one dataframe in a coherent way
     dfs = []
-    for df in os.listdir(args.dset_id):
-        dfs.append(pd.read_csv(args.dset_id + "/" + df))
+    for df in os.listdir(args.multiTemp):
+        dfs.append(pd.read_csv(args.multiTemp + "/" + df))
     # Initialize a new DataFrame with the same structure
     df1 = dfs[0]
     dataset = pd.DataFrame(index=df1.index, columns=df1.columns)
@@ -49,8 +47,9 @@ def merge_bands(args):
             dataset.at[idx, col] = [df.at[idx, col] for df in dfs]  # Create a list of values from all dataframes
 
     # make sure that the id and label column is not a list
-    dataset["essence_cat"] = df1["essence_cat"]
-    dataset["id"] = df1["id"]
+    print(df1.columns)
+    dataset[args.labelHeader] = df1[args.labelHeader]
+    dataset[args.IDHeader] = df1[args.IDHeader]
 
     # Add this dataframe to the final list
     print(f"dataset has shape: {dataset.shape}")
@@ -63,17 +62,17 @@ def dataloader_init(args):
 
     # Divide in training and validation
     ###################################
-    if not opt.fixed_train_test:
+    if not args.fixed_train_test:
         print("-----Dividing the dataset into a training and test set ------")
-        dataset = train_val_test_div_2(dataset, "essence_cat")
+        dataset = train_val_test_div_2(dataset, args.labelHeader)
         print("-----Saving the dataset with the added training-validation division")
-        dataset.to_csv("basis" + args.output_name, index=False)
+        dataset.to_csv("basis_training_set.csv", index=False)
 
     # Over or undersample
     ###################################
     if args.undersample:
         print("-----Under/oversampling the dataset-----")
-        dataset = resample(dataset, sampling="over", num_classes=2, NearMissV=3, seed=2)
+        dataset = resample(dataset, args.labelHeader, sampling="over", num_classes=2, NearMissV=3, seed=2)
         print("-----Saving the undersampled dataset-----")
         dataset.to_csv("post_undersample_check.csv", index=False)
         print("----Number of samples after under/oversamling-----")

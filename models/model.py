@@ -10,7 +10,7 @@ import torch.nn.functional as F
 from torch import nn, einsum
 import numpy as np
 from einops import rearrange
-from Embed import *
+from Utils.Embed import *
 
 # helpers
 

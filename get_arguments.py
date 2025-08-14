@@ -10,6 +10,7 @@ Author: Robbe Neyns
 Created: Thu Jul 31 10:38:11 2023
 """
 
+import argparse
 
 def get_arguments():
     parser = argparse.ArgumentParser()
@@ -27,11 +28,15 @@ def get_arguments():
                         type=int)
     parser.add_argument("-nc", "--numClasses", metavar="NUMBER_CLASSES",
                         help="Number of classes that will be predicted by the model", type=int)
+    parser.add_argument('--fixed_train_test', action='store_true')
+    parser.add_argument('--undersample', action='store_true')
+    parser.add_argument('--spatio_temp', action='store_true')
+    parser.add_argument('--transfer_learning', action='store_true')
+    parser.add_argument('--apply_version', action='store_false')
 
     parser.add_argument("-ResNetV", "--ResNetV", metavar="VERSION_OF_RESNET",
                         help="It is possible to train the network with ResNet18 (0), ResNet34 (1), ResNet50 (2), ResNet101 (3) and ResNet152 (4). To choose a model, please specify the associated number",
                         type=int, default=1)
-
     parser.add_argument('--modulation', default='OGM_GE', type=str,
                         choices=['Normal', 'OGM', 'OGM_GE', 'Acc'])
     parser.add_argument('--fusion_method', default='concat', type=str,

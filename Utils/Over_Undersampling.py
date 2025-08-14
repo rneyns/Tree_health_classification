@@ -14,7 +14,7 @@ from imblearn.under_sampling import RandomUnderSampler
 import imblearn
 
 
-def resample(df_i,sampling="under",num_classes=2, NearMissV = 3, seed = None):
+def resample(df_i, labelHeader, sampling="under",num_classes=2, NearMissV = 3, seed = None):
     df = df_i #pd.read_csv(df_i)
     df = df.dropna()
     print(df.isnull().sum().sum())
@@ -25,8 +25,8 @@ def resample(df_i,sampling="under",num_classes=2, NearMissV = 3, seed = None):
     test = df[df["Train_test"] == 1]
     
     #Get the X and y data from the datafame
-    y = train["essence_cat"].to_numpy()
-    train.drop(['essence_cat'],inplace = True,axis=1)
+    y = train[labelHeader].to_numpy()
+    train.drop([labelHeader],inplace = True,axis=1)
     X = train.to_numpy()
     
     #Perform the sampling
@@ -76,7 +76,7 @@ def resample(df_i,sampling="under",num_classes=2, NearMissV = 3, seed = None):
 
     #Add the new training set to the dataset
     new_train = pd.DataFrame(X, columns=train.columns)
-    new_train["essence_cat"] = y
+    new_train[labelHeader] = y
     result_df = pd.concat([new_train, test], ignore_index=True)
     return result_df
 
