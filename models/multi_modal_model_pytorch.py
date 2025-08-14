@@ -181,15 +181,6 @@ class MM_model(nn.Module):
         self.num_classes=num_classes
         self.batch_size = batch_size
         super(MM_model, self).__init__()
-        self.outputs_val=[]
-        self.outputs_test=[]
-        self.cohenkappa = torchmetrics.classification.CohenKappa(num_classes=int(num_classes))
-        self.F1 = torchmetrics.classification.F1Score(num_classes = int(num_classes))
-        self.val_outputs = torch.empty(0).to("cuda:0")
-        self.val_labels = torch.empty(0).to("cuda:0")
-        self.class_weights = torch.Tensor([1.0, 20.0]).double()
-        self.criterion = torch.nn.CrossEntropyLoss()
-
         self.img_net = imgClassifier(block, layers, num_classes)
         self.tab_net = tab_net
                                        

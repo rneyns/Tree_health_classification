@@ -52,19 +52,19 @@ def data_split(X,y,ids, DOY,indices):
     return x_d, y_d, id_d, doy_d
 
 
-def data_prep(ds_id, seed, task, datasplit=[.65, .15, .2], pretraining=False):
+def data_prep(ds_id, args, seed, task, datasplit=[.65, .15, .2], pretraining=False):
     
     np.random.seed(seed) #this is a utility function supporting older numpy code to provide a seed for a random number generator --> this makes sure that the random numbers that are generated with randn will always be the same 
     dataset = pd.read_csv(ds_id)
     
     if pretraining: 
-        y = dataset["essence_cat"]
-        ids = dataset["id"]
-        X = dataset.drop(['id','essence_cat'], axis=1)
+        y = dataset[args.labelHeader]
+        ids = dataset[args.IDHeader]
+        X = dataset.drop([args.IDHeader,args.labelHeader], axis=1)
     else:
-        y = dataset["essence_cat"]
-        ids = dataset["id"]
-        X = dataset.drop(['id','essence_cat','Train_test'], axis=1)
+        y = dataset[args.labelHeader]
+        ids = dataset[args.IDHeader]
+        X = dataset.drop([args.IDHeader,args.labelHeader,'Train_test'], axis=1)
 
     attribute_names = X.columns.to_list()
     categorical_indicator = [False for x in range(len(attribute_names))]
@@ -141,7 +141,7 @@ def print_non_4_lists(x):
     return x
 
 
-def data_prep_premade(ds_id, DOY, seed, task, pretraining=False):
+def data_prep_premade(ds_id, DOY, args, seed, task, pretraining=False):
     
     np.random.seed(seed) #this is a utility function supporting older numpy code to provide a seed for a random number generator --> this makes sure that the random numbers that are generated with randn will always be the same 
     #dataset = pd.read_csv(ds_id)
@@ -149,13 +149,13 @@ def data_prep_premade(ds_id, DOY, seed, task, pretraining=False):
     print(dataset.columns)
     
     if not pretraining:
-        y = dataset["essence_cat"]
-        ids = dataset['id'].values
-        X = dataset.drop(['id','essence_cat','Train_test'], axis=1)
+        y = dataset[args.labelHeader]
+        ids = dataset[args.IDHeader].values
+        X = dataset.drop([args.IDHeader,args.labelHeader,'Train_test'], axis=1)
     else:
         y = dataset.iloc[:,0] #setting just the first column which actually sets reflectance values but that's ok because they won't be used during pretrainig
-        ids = dataset['id'].values
-        X = dataset.drop(['id','essence_cat','Train_test'], axis=1)
+        ids = dataset[args.IDHeader].values
+        X = dataset.drop([args.IDHeader,args.labelHeader,'Train_test'], axis=1)
 
     print(f"ids[0]: {ids[0]}")
     attribute_names = X.columns.to_list()

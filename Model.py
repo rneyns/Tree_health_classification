@@ -15,8 +15,9 @@ Created: Tue Sep 19 15:07:11 2023
 
 
 # model.py - for model and related utilities
-from models import SAINT, MM_model
+from models import SAINT, MM_model, BasicBlock
 import torch.optim as optim
+import numpy as np
 
 def initialize_model(args, device, cat_dims, con_idxs):
     model_tab = SAINT(
@@ -32,11 +33,11 @@ def initialize_model(args, device, cat_dims, con_idxs):
         cont_embeddings=args.cont_embeddings,
         attentiontype=args.attentiontype,
         final_mlp_style=args.final_mlp_style,
-        y_dim=len(np.unique(y_train['data'][:, 0]))
+        y_dim=args.numClasses,
     )
     model_tab.to(device)
     model = MM_model(model_tab, BasicBlock, [2, 2, 2, 2], num_classes=args.numClasses, n_dates=args.timeSteps,
-                     DEM=args.DEM, final_vector_conv=args.numClasses, final_vector_mlp=args.numClasses,
+                     DEM=False, final_vector_conv=args.numClasses, final_vector_mlp=args.numClasses,
                      batch_size=16, lr_img=1e-6, lr_tab=0.001, dropout=0.3, regularization=0.000)
     return model
 

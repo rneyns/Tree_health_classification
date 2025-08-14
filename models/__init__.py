@@ -7,4 +7,4 @@ Created on Tue Sep 26 11:21:27 2023
 
 from models.pretrainmodel import SAINT
 from models.pretrainmodel_vision import SAINT_vision
-from models.multi_modal_model_pytorch import MM_model
+from models.multi_modal_model_pytorch import MM_model, BasicBlock

@@ -77,9 +77,9 @@ def dataloader_init(args):
         dataset.to_csv("post_undersample_check.csv", index=False)
         print("----Number of samples after under/oversamling-----")
         ##### Count the number of rows with value 1
-        num_rows_with_1 = (dataset['essence_cat'] == 1).sum()
+        num_rows_with_1 = (dataset[args.labelHeader] == 1).sum()
         ##### Count the number of rows with value 0
-        num_rows_with_0 = (dataset['essence_cat'] == 0).sum()
+        num_rows_with_0 = (dataset[args.labelHeader] == 0).sum()
 
         print("Number of rows with value 1:", num_rows_with_1)
         print("Number of rows with value 0:", num_rows_with_0)
@@ -90,10 +90,10 @@ def dataloader_init(args):
     print(f"number of continous variables: {num_continuous}")
 
     ##### Count the number of rows with value 1
-    num_rows_with_1 = (dataset['essence_cat'] == 1).sum()
+    num_rows_with_1 = (dataset[args.labelHeader] == 1).sum()
 
     ##### Count the number of rows with value 0
-    num_rows_with_0 = (dataset['essence_cat'] == 0).sum()
+    num_rows_with_0 = (dataset[args.labelHeader] == 0).sum()
 
     print("Number of rows with label 1:", num_rows_with_1)
     print("Number of rows with label 0:", num_rows_with_0)
@@ -105,9 +105,9 @@ def dataloader_init(args):
     w1_norm = (w1 / (w0 + w1)) * 2
 
     print('---- Initializing the dataloaders ----')
-
+    DOY = create_DOY(dataset)
     cat_dims, cat_idxs, con_idxs, X_train, y_train, ids_train, X_valid, y_valid, ids_valid, X_test, y_test, ids_test, train_mean, train_std, DOY_train, DOY_valid = data_prep_premade(
-        ds_id=dataset, DOY=DOY, seed=opt.dset_seed, task=opt.task)
+        ds_id=dataset, DOY=DOY, args=args, seed=args.dset_seed, task=args.task)
     continuous_mean_std = np.array([train_mean, train_std]).astype(np.float32)
 
     ##### Setting some hyperparams based on inputs and dataset
@@ -115,9 +115,9 @@ def dataloader_init(args):
     print(f"Number of dates: {nfeat}; and number of bands: {nbands}")
 
     if nfeat > 100:
-        args.embedding_size = min(4, opt.embedding_size)
+        args.embedding_size = min(4, args.embedding_size)
         # The batch size needs to be at least  to make optimal use of the intersample attention
-        args.batchsize = min(64, opt.batchsize)
+        args.batchsize = min(64, args.batchsize)
     if args.attentiontype != 'col':
         args.transformer_depth = 1
         args.attention_heads = 4
@@ -129,14 +129,14 @@ def dataloader_init(args):
         else:
             args.ff_dropout = 0.8
 
-    train_ds = DataSetCatCon(X_train, y_train, DOY_train, ids_train, cat_idxs, args.dtask)#, continuous_mean_std)
-    trainloader = DataLoader(train_ds, batch_size=args.batchsize, shuffle=True, num_workers=1)
+    train_ds = DataSetCatCon(X_train, y_train, DOY_train, ids_train, cat_idxs, 'clf')#, continuous_mean_std)
+    trainloader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=1)
 
-    valid_ds = DataSetCatCon(X_valid, y_valid, DOY_valid, ids_valid, cat_idxs, args.dtask)#, continuous_mean_std)
-    validloader = DataLoader(valid_ds, batch_size=args.batchsize, shuffle=False, num_workers=1)
+    valid_ds = DataSetCatCon(X_valid, y_valid, DOY_valid, ids_valid, cat_idxs, 'clf')#, continuous_mean_std)
+    validloader = DataLoader(valid_ds, batch_size=args.batch_size, shuffle=False, num_workers=1)
 
-    test_ds = DataSetCatCon(X_test, y_test, DOY_valid, ids_test, cat_idxs, args.dtask)#, continuous_mean_std)
-    testloader = DataLoader(test_ds, batch_size=args.batchsize, shuffle=False, num_workers=1)
+    test_ds = DataSetCatCon(X_test, y_test, DOY_valid, ids_test, cat_idxs, 'clf')#, continuous_mean_std)
+    testloader = DataLoader(test_ds, batch_size=args.batch_size, shuffle=False, num_workers=1)
 
 
 
@@ -151,10 +151,10 @@ def prepare_predictloader(args):
     ### configuring the dataloader for the predict step (needs to happen before the undersampling)
     dataset["Train_test"] = 0
     cat_dims_pre, cat_idxs_pre, con_idxs_pre, X_train_pre, y_train_pre, ids_train_pre, X_valid_pre, y_valid_pre, ids_valid_pre, X_test_pre, y_test_pre, ids_test_pre, train_mean_pre, train_std_pre, DOY_train_pre, DOY_valid_pre = data_prep_premade(
-        ds_id=dataset, DOY=DOY_pre, seed=opt.dset_seed, task=opt.task)
+        ds_id=dataset, DOY=DOY_pre, args=args, seed=args.dset_seed, task=args.task)
 
     # Create the predictloader
     # continuous_mean_std = np.array([train_mean,train_std]).astype(np.float32)
     ds = DataSetCatCon(X_train_pre, y_train_pre, DOY_train_pre, ids_train_pre, cat_idxs_pre,
-                       args.dtask)  # , continuous_mean_std=continuous_mean_std)
-    predictloader = DataLoader(ds, batch_size=args.batchsize, shuffle=False, num_workers=1)
+                        'clf')  # , continuous_mean_std=continuous_mean_std)
+    predictloader = DataLoader(ds, batch_size=args.batch_size, shuffle=False, num_workers=1)

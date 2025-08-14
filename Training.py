@@ -19,6 +19,7 @@ from utils_.utils import setup_seed
 from augmentations import embed_data_mask
 from augmentations import add_noise
 import torch
+import torch.nn as nn
 
 def prepare_data_embedding(data, args, model, device, cat_mask=None, con_mask=None):
     vision_dset = args.vision_dset
