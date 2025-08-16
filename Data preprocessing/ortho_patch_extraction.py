@@ -13,7 +13,8 @@ def build_tile_extent_library(tiles_folder, save_path=None):
     Optionally saves the library to a file.
     """
     tile_extents = {}
-
+    tif_files = [f for f in os.listdir(tiles_folder) if f.endswith('.tif')]
+    print(f"Number of tiles in {tiles_folder}: {len(tif_files)}")
     for tile in os.listdir(tiles_folder):
         if tile.endswith('tif'):
             tile_path_rgb = os.path.join(tiles_folder, tile)
@@ -22,7 +23,6 @@ def build_tile_extent_library(tiles_folder, save_path=None):
                 with rasterio.open(tile_path_rgb) as src:
                     # Get the bounds of the tile
                     min_lon, min_lat, max_lon, max_lat = src.bounds
-                    print(min_lon, min_lat, max_lon, max_lat)
                     tile_extents[tile] = (min_lon, min_lat, max_lon, max_lat)
 
     if save_path:

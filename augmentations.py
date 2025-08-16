@@ -16,12 +16,14 @@ def embed_data_mask(x_categ, x_cont,model,vision_dset=False,DOY = 0):
     x_categ_enc = x_categ ## just a little hack fix
     batch, n1,n2 = x_cont.shape
     #_, n3 = x_categ.shape
-    if model.cont_embeddings == 'MLP':
-        x_cont_enc = torch.empty(n1,n2, model.dim)
-        for i in range(model.num_continuous):
-            x_cont_enc[:,i,:] = model.simple_MLP[i](x_cont[:,i])
-    elif model.cont_embeddings == 'temporal' or model.cont_embeddings == 'spatio-temporal':
-        x_cont_enc, _, _, con_mask = model.embedding(x_cont,DOY)
+    if model.tab_net.cont_embeddings == 'MLP':
+        x_cont_enc = torch.empty(batch,n1, model.tab_net.dim)
+        con_mask = (~torch.isnan(x_cont)).any(dim=-1)
+        for i in range(model.tab_net.num_continuous):
+            emb = model.tab_net.simple_MLP[i](x_cont[:,i,:])
+            x_cont_enc[:,i,:] = emb
+    elif model.tab_net.cont_embeddings == 'temporal' or model.tab_net.cont_embeddings == 'spatio-temporal':
+        x_cont_enc, _, _, con_mask = model.tab_net.embedding(x_cont,DOY)
     else:
         raise Exception('This case should not work!')    
 
@@ -37,7 +39,7 @@ def embed_data_mask(x_categ, x_cont,model,vision_dset=False,DOY = 0):
 
     #print(f"con_mask_temp after offset: {con_mask_temp.shape}")
     #cat_mask_temp = model.mask_embeds_cat(cat_mask_temp)
-    con_mask_temp = model.mask_embeds_cont(con_mask_temp)
+    #con_mask_temp = model.tab_net.mask_embeds_cont(con_mask_temp)
     #print(f"con_mask_temp after mask_embeds_cont: {con_mask_temp.shape}")
     #print(f"x_cont_enc shape: {x_cont_enc.shape}")
     #x_categ_enc[cat_mask == 0] = cat_mask_temp[cat_mask == 0] #it just fills the masked locations up? with what?
@@ -46,7 +48,7 @@ def embed_data_mask(x_categ, x_cont,model,vision_dset=False,DOY = 0):
     if vision_dset:
         pos = np.tile(np.arange(x_categ.shape[-1]),(x_categ.shape[0],1))
         pos =  torch.from_numpy(pos).to(device)
-        pos_enc =model.pos_encodings(pos)
+        pos_enc =model.tab_net.pos_encodings(pos)
         x_categ_enc+=pos_enc
 
     return x_categ, x_categ_enc, x_cont_enc, con_mask

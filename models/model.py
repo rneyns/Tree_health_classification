@@ -121,6 +121,7 @@ class RowColTransformer(nn.Module):
                 ]))
 
     def forward(self, x, x_cont=None, mask = None):
+        print(f"x in the forward pass (the encoded version):{x}")
         if x_cont is not None:
             #x = torch.cat((x,x_cont),dim=1)
             x = x_cont
@@ -188,8 +189,9 @@ class MLP(nn.Module):
 class simple_MLP(nn.Module):
     def __init__(self,dims):
         super(simple_MLP, self).__init__()
+        print(dims)
         self.layers = nn.Sequential(
-            nn.Linear(dims[0], dims[1], dtype=torch.float32),
+            nn.Linear(4, dims[1], dtype=torch.float32),
             nn.ReLU(),
             nn.Linear(dims[1], dims[2], dtype=torch.float32)
         )
