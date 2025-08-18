@@ -111,17 +111,16 @@ class RowColTransformer(nn.Module):
                 self.layers.append(nn.ModuleList([
                     PreNorm(dim, Residual(Attention(dim, heads = heads, dim_head = dim_head, dropout = attn_dropout))),
                     PreNorm(dim, Residual(FeedForward(dim, dropout = ff_dropout))),
-                    PreNorm(dim*nfeats*bands, Residual(Attention(dim*nfeats, heads = heads, dim_head = 64, dropout = attn_dropout))),
-                    PreNorm(dim*nfeats*bands, Residual(FeedForward(dim*nfeats, dropout = ff_dropout))),
+                    PreNorm(dim*nfeats*bands, Residual(Attention(dim*nfeats*bands, heads = heads, dim_head = 64, dropout = attn_dropout))),
+                    PreNorm(dim*nfeats*bands, Residual(FeedForward(dim*nfeats*bands, dropout = ff_dropout))),
                 ]))
             else:
                 self.layers.append(nn.ModuleList([
-                    PreNorm(dim*nfeats*bands, Residual(Attention(dim*nfeats, heads = heads, dim_head = 64, dropout = attn_dropout))),
-                    PreNorm(dim*nfeats*bands, Residual(FeedForward(dim*nfeats, dropout = ff_dropout))),
+                    PreNorm(dim*nfeats*bands, Residual(Attention(dim*nfeats*bands, heads = heads, dim_head = 64, dropout = attn_dropout))),
+                    PreNorm(dim*nfeats*bands, Residual(FeedForward(dim*nfeats*bands, dropout = ff_dropout))),
                 ]))
 
     def forward(self, x, x_cont=None, mask = None):
-        print(f"x in the forward pass (the encoded version):{x}")
         if x_cont is not None:
             #x = torch.cat((x,x_cont),dim=1)
             x = x_cont
@@ -136,7 +135,9 @@ class RowColTransformer(nn.Module):
                 x = rearrange(x, 'b n d -> 1 b (n d)') # dit wordt gedaan om de attention op de kolommen te zetten
                 print(f"x after rearrange loop:{x.shape}")
                 x = attn2(x)
+                print(f"x after attn2 loop:{x.shape}")
                 x = ff2(x)
+                print(f"x after ff2 loop:{x.shape}")
                 x = rearrange(x, '1 b (n d) -> b n d', n = n)
         else:
              for attn1, ff1 in self.layers:
