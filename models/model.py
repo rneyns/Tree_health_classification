@@ -99,7 +99,7 @@ class Attention(nn.Module): ## this is where the attention module is actually im
 
 
 class RowColTransformer(nn.Module):
-    def __init__(self, num_tokens, dim, nfeats, depth, heads, dim_head, attn_dropout, ff_dropout,style='col'):
+    def __init__(self, num_tokens, dim, nfeats, bands, depth, heads, dim_head, attn_dropout, ff_dropout,style='col'):
         super().__init__()
         self.embeds = nn.Embedding(num_tokens, dim)
         self.layers = nn.ModuleList([])
@@ -111,13 +111,13 @@ class RowColTransformer(nn.Module):
                 self.layers.append(nn.ModuleList([
                     PreNorm(dim, Residual(Attention(dim, heads = heads, dim_head = dim_head, dropout = attn_dropout))),
                     PreNorm(dim, Residual(FeedForward(dim, dropout = ff_dropout))),
-                    PreNorm(dim*nfeats, Residual(Attention(dim*nfeats, heads = heads, dim_head = 64, dropout = attn_dropout))),
-                    PreNorm(dim*nfeats, Residual(FeedForward(dim*nfeats, dropout = ff_dropout))),
+                    PreNorm(dim*nfeats*bands, Residual(Attention(dim*nfeats, heads = heads, dim_head = 64, dropout = attn_dropout))),
+                    PreNorm(dim*nfeats*bands, Residual(FeedForward(dim*nfeats, dropout = ff_dropout))),
                 ]))
             else:
                 self.layers.append(nn.ModuleList([
-                    PreNorm(dim*nfeats, Residual(Attention(dim*nfeats, heads = heads, dim_head = 64, dropout = attn_dropout))),
-                    PreNorm(dim*nfeats, Residual(FeedForward(dim*nfeats, dropout = ff_dropout))),
+                    PreNorm(dim*nfeats*bands, Residual(Attention(dim*nfeats, heads = heads, dim_head = 64, dropout = attn_dropout))),
+                    PreNorm(dim*nfeats*bands, Residual(FeedForward(dim*nfeats, dropout = ff_dropout))),
                 ]))
 
     def forward(self, x, x_cont=None, mask = None):
@@ -127,10 +127,14 @@ class RowColTransformer(nn.Module):
             x = x_cont
         _, n, _ = x.shape
         if self.style == 'colrow':
-            for attn1, ff1, attn2, ff2 in self.layers: 
+            for attn1, ff1, attn2, ff2 in self.layers:
+                print(f"x at the start:{x.shape}")
                 x = attn1(x, mask)
+                print(f"x after attn1 loop:{x.shape}")
                 x = ff1(x)
+                print(f"x after ff1 loop:{x.shape}")
                 x = rearrange(x, 'b n d -> 1 b (n d)') # dit wordt gedaan om de attention op de kolommen te zetten
+                print(f"x after rearrange loop:{x.shape}")
                 x = attn2(x)
                 x = ff2(x)
                 x = rearrange(x, '1 b (n d) -> b n d', n = n)
@@ -191,7 +195,7 @@ class simple_MLP(nn.Module):
         super(simple_MLP, self).__init__()
         print(dims)
         self.layers = nn.Sequential(
-            nn.Linear(4, dims[1], dtype=torch.float32),
+            nn.Linear(dims[0], dims[1], dtype=torch.float32),
             nn.ReLU(),
             nn.Linear(dims[1], dims[2], dtype=torch.float32)
         )

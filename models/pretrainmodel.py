@@ -30,6 +30,7 @@ class SAINT(nn.Module):
         *,
         categories, ## dimension of the categorical variables (I don't have any)
         num_continuous, ## the number of continuous variables in the table
+        bands,
         dim, ##size of the embedding --> is now by default 32
         depth, ## the depth of the transformer model --> how many transformer blocks (multi-head self-attention + MLP) are stacked on top of eachother --> default = 6
         heads, ## number of attention heads per transformer block --> default is 8
@@ -106,7 +107,7 @@ class SAINT(nn.Module):
         else:
             print('Continous features are not passed through attention')
             input_size = (dim * self.num_categories) + num_continuous
-            nfeats = self.num_categories 
+            nfeats = self.num_categories
 
         # transformer
         if attentiontype == 'col':
@@ -123,7 +124,8 @@ class SAINT(nn.Module):
             self.transformer = RowColTransformer(
                 num_tokens = self.total_tokens,
                 dim = dim,
-                nfeats= nfeats,
+                nfeats= num_continuous,
+                bands= bands,
                 depth = depth,
                 heads = heads,
                 dim_head = dim_head,

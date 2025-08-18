@@ -157,7 +157,6 @@ def data_prep_premade(ds_id, DOY, args, seed, task, pretraining=False):
         ids = dataset[args.IDHeader].values
         X = dataset.drop([args.IDHeader,args.labelHeader,'Train_test'], axis=1)
 
-    print(f"ids[0]: {ids[0]}")
     attribute_names = X.columns.to_list()
     categorical_indicator = [False for x in range(len(attribute_names))]
     

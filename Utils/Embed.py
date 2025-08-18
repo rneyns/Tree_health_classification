@@ -123,7 +123,6 @@ class Embedding(nn.Module):
             # optionally mask the context sequence for reconstruction
             y = self.data_drop(y)
         mask = self.make_mask(y)
-        print(f"mask: {mask}")
 
         # position embedding ("local_emb")
         local_pos = torch.arange(length).to(x.device)

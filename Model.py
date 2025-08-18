@@ -20,9 +20,11 @@ import torch.optim as optim
 import numpy as np
 
 def initialize_model(args, device, cat_dims, con_idxs):
+    print("---------length of the continous index array is: ", len(con_idxs), "---------")
     model_tab = SAINT(
         categories=tuple(cat_dims),
         num_continuous=len(con_idxs),
+        bands=4, #specify the number of bands for each date
         dim=args.embedding_size,
         dim_out=1,
         depth=args.transformer_depth,

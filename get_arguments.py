@@ -70,7 +70,7 @@ def get_arguments():
 
     parser.add_argument('--task', required=True, default='clf', type=str,
                         choices=['binary', 'multiclass', 'regression', 'clf'])
-    parser.add_argument('--cont_embeddings', default='MLP', type=str, choices=['MLP', 'Noemb', 'pos_singleMLP'])
+    parser.add_argument('--cont_embeddings', default='spatio-temporal', type=str, choices=['MLP', 'spatio-temporal'])
     parser.add_argument('--embedding_size', default=32, type=int)
     parser.add_argument('--transformer_depth', default=6, type=int)
     parser.add_argument('--attention_heads', default=8, type=int)
