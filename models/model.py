@@ -127,17 +127,11 @@ class RowColTransformer(nn.Module):
         _, n, _ = x.shape
         if self.style == 'colrow':
             for attn1, ff1, attn2, ff2 in self.layers:
-                print(f"x at the start:{x.shape}")
                 x = attn1(x, mask)
-                print(f"x after attn1 loop:{x.shape}")
                 x = ff1(x)
-                print(f"x after ff1 loop:{x.shape}")
                 x = rearrange(x, 'b n d -> 1 b (n d)') # dit wordt gedaan om de attention op de kolommen te zetten
-                print(f"x after rearrange loop:{x.shape}")
                 x = attn2(x)
-                print(f"x after attn2 loop:{x.shape}")
                 x = ff2(x)
-                print(f"x after ff2 loop:{x.shape}")
                 x = rearrange(x, '1 b (n d) -> b n d', n = n)
         else:
              for attn1, ff1 in self.layers:

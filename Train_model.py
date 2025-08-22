@@ -37,9 +37,10 @@ if __name__ == "__main__":
 
 
     args = get_arguments()
-    args.use_cuda = torch.cuda.is_available() and not args.no_cuda
+
     #setup_seed(args.random_seed)
     device = torch.device('cuda:' + str(args.gpu) if args.use_cuda else 'cpu')
+    print("Using device: ", device)
 
     trainloader, validloader, testloader, cat_dims, con_idxs, y_dim, DOY, w0_norm, w1_norm, args = dataloader_init(args)
 
