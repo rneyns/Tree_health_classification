@@ -51,8 +51,11 @@ def train_epoch(args, epoch, model, device, dataloader, optimizer, scheduler, ra
     _loss = 0
     _loss_a = 0
     _loss_v = 0
+
     _a_angle = 0
     _v_angle = 0
+    _a_diff = 0
+    _v_diff = 0
     _ratio_a = 0
 
     for step, data in enumerate(dataloader):
@@ -62,12 +65,87 @@ def train_epoch(args, epoch, model, device, dataloader, optimizer, scheduler, ra
 
         a, v, out = model(image, x_categ_enc, x_cont_enc, con_mask)
 
+        if args.fusion_method == 'sum':
+            out_v = (torch.mm(v, torch.transpose(model.fusion_module.ffc_y.weight, 0, 1)) +
+                     model.fusion_module.ffc_y.bias)
+            out_a = (torch.mm(a, torch.transpose(model.fusion_module.ffc_x.weight, 0, 1)) +
+                     model.fusion_module.ffc_x.bias)
+        elif args.fusion_method == 'concat':
+            weight_size = model.fusion_module.ffc_out.weight.size(1)
+            out_v = (torch.mm(v, torch.transpose(model.fusion_module.ffc_out.weight[:, weight_size // 2:], 0, 1))
+                     + model.fusion_module.ffc_out.bias / 2)
+            out_a = (torch.mm(a, torch.transpose(model.fusion_module.ffc_out.weight[:, :weight_size // 2], 0, 1))
+                     + model.fusion_module.ffc_out.bias / 2)
+        elif args.fusion_method == 'film' or args.fusion_method == 'gated':
+            out_v = out
+            out_a = out
+
         # Loss calculation
         loss = criterion(out, label)
         loss_v = criterion(v, label)
         loss_a = criterion(a, label)
 
         loss.backward()  # Backward pass
+
+        if args.modulation == 'Normal':
+            score_v = sum([softmax(out_v)[i][label[i]] for i in range(out_v.size(0))])
+            score_a = sum([softmax(out_a)[i][label[i]] for i in range(out_a.size(0))])
+
+            ratio_v = score_v / score_a
+            ratio_a = 1 / ratio_v
+        else:
+            # Modulation starts here !
+            score_v = sum([softmax(out_v)[i][label[i]] for i in range(out_v.size(0))])
+            score_a = sum([softmax(out_a)[i][label[i]] for i in range(out_a.size(0))])
+
+            ratio_v = score_v / score_a
+            ratio_a = 1 / ratio_v
+            # ratio_v = 1 / ratio_a
+
+            """
+            Below is the Eq.(10) in our CVPR paper:
+                    1 - tanh(alpha * rho_t_u), if rho_t_u > 1
+            k_t_u =
+                    1,                         else
+            coeff_u is k_t_u, where t means iteration steps and u is modality indicator, either a or v.
+            """
+            if ratio_v > 1:
+                coeff_v = 1 - tanh(args.alpha * relu(ratio_v))
+                coeff_a = 1
+                acc_v = 1
+                acc_a = 1 + tanh(args.alpha * relu(ratio_v))
+            else:
+                coeff_a = 1 - tanh(args.alpha * relu(ratio_a))
+                coeff_v = 1
+                acc_a = 1
+                acc_v = 1 + tanh(args.alpha * relu(ratio_a))
+
+            # TODO: check again what the modulation does exactly and if it's not a problem that the final layers are now also being modulated
+            if args.modulation_starts <= epoch <= args.modulation_ends:  # bug fixed
+                if args.dataset != 'CGMNIST':
+                    for name, parms in model.named_parameters():
+                        layer = str(name).split('.')[0]
+                        if parms.grad is not None:
+                            if 'img' in layer and len(parms.grad.size()) == 4:
+                                if args.modulation == 'OGM_GE':  # bug fixed
+                                    parms.grad = parms.grad * coeff_v + \
+                                                 torch.zeros_like(parms.grad).normal_(0, parms.grad.std().item() + 1e-8)
+                                elif args.modulation == 'OGM':
+                                    parms.grad *= coeff_v
+                                elif args.modulation == 'Acc':
+                                    parms.grad *= acc_v
+                            elif 'ffc' not in layer and len(parms.grad.size()) == 4:
+                                if args.modulation == 'OGM_GE':  # bug fixed
+                                    parms.grad = parms.grad * coeff_a + \
+                                                 torch.zeros_like(parms.grad).normal_(0, parms.grad.std().item() + 1e-8)
+                                elif args.modulation == 'OGM':
+                                    parms.grad *= coeff_a
+                                elif args.modulation == 'Acc':
+                                    parms.grad *= acc_a
+
+            else:
+                pass
+
         optimizer.step()
 
         # Metrics tracking
@@ -81,4 +159,5 @@ def train_epoch(args, epoch, model, device, dataloader, optimizer, scheduler, ra
     if args.optimizer == 'SGD':
         scheduler.step()
 
-    return _loss / len(dataloader), _loss_a / len(dataloader), _loss_v / len(dataloader)
+    return _loss / len(dataloader), _loss_a / len(dataloader), _loss_v / len(dataloader), _a_angle / len(dataloader), \
+           _v_angle / len(dataloader), _ratio_a / len(dataloader)
