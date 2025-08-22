@@ -6,7 +6,7 @@
 
 #SBATCH --mem=20gb
 
-#SBATCH --time=1:00:00
+#SBATCH --time=6:00:00
 
 
 
