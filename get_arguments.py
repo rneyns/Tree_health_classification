@@ -11,6 +11,7 @@ Created: Thu Jul 31 10:38:11 2023
 """
 
 import argparse
+import torch
 
 def get_arguments():
     parser = argparse.ArgumentParser()
