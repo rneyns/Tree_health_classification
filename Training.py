@@ -44,6 +44,8 @@ def prepare_data_embedding(data, args, model, device, cat_mask=None, con_mask=No
 def train_epoch(args, epoch, model, device, dataloader, optimizer, scheduler, ratio_a, writer=None):
     criterion = nn.CrossEntropyLoss()
     softmax = nn.Softmax(dim=1)
+    relu = nn.ReLU(inplace=True)
+    tanh = nn.Tanh()
 
     model.train()
     print("Start training ... ")
