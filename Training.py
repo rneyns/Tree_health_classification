@@ -124,26 +124,25 @@ def train_epoch(args, epoch, model, device, dataloader, optimizer, scheduler, ra
 
             # TODO: check again what the modulation does exactly and if it's not a problem that the final layers are now also being modulated
             if args.modulation_starts <= epoch <= args.modulation_ends:  # bug fixed
-                if args.dataset != 'CGMNIST':
-                    for name, parms in model.named_parameters():
-                        layer = str(name).split('.')[0]
-                        if parms.grad is not None:
-                            if 'img' in layer and len(parms.grad.size()) == 4:
-                                if args.modulation == 'OGM_GE':  # bug fixed
-                                    parms.grad = parms.grad * coeff_v + \
-                                                 torch.zeros_like(parms.grad).normal_(0, parms.grad.std().item() + 1e-8)
-                                elif args.modulation == 'OGM':
-                                    parms.grad *= coeff_v
-                                elif args.modulation == 'Acc':
-                                    parms.grad *= acc_v
-                            elif 'ffc' not in layer and len(parms.grad.size()) == 4:
-                                if args.modulation == 'OGM_GE':  # bug fixed
-                                    parms.grad = parms.grad * coeff_a + \
-                                                 torch.zeros_like(parms.grad).normal_(0, parms.grad.std().item() + 1e-8)
-                                elif args.modulation == 'OGM':
-                                    parms.grad *= coeff_a
-                                elif args.modulation == 'Acc':
-                                    parms.grad *= acc_a
+                for name, parms in model.named_parameters():
+                    layer = str(name).split('.')[0]
+                    if parms.grad is not None:
+                        if 'img' in layer and len(parms.grad.size()) == 4:
+                            if args.modulation == 'OGM_GE':  # bug fixed
+                                parms.grad = parms.grad * coeff_v + \
+                                             torch.zeros_like(parms.grad).normal_(0, parms.grad.std().item() + 1e-8)
+                            elif args.modulation == 'OGM':
+                                parms.grad *= coeff_v
+                            elif args.modulation == 'Acc':
+                                parms.grad *= acc_v
+                        elif 'ffc' not in layer and len(parms.grad.size()) == 4:
+                            if args.modulation == 'OGM_GE':  # bug fixed
+                                parms.grad = parms.grad * coeff_a + \
+                                             torch.zeros_like(parms.grad).normal_(0, parms.grad.std().item() + 1e-8)
+                            elif args.modulation == 'OGM':
+                                parms.grad *= coeff_a
+                            elif args.modulation == 'Acc':
+                                parms.grad *= acc_a
 
             else:
                 pass
