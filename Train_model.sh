@@ -39,4 +39,5 @@ ml load einops/0.4.1-GCCcore-11.3.0
 
 cd /user/brussel/104/vsc10421/Tree_health_classification
 
-python Train_model.py  -i "/data/brussel/104/vsc10421/onedrive/hydra-sync/output_patches" -multi "/data/brussel/104/vsc10421/onedrive/hydra-sync/5 species and other" -lh species_code -idh tree_id -w 120 -ts 12 -nc 6 --no_cuda --batch_size 32 --epochs 2 --alpha 0.5 --task 'multiclass' --undersample --spatio_temp
+
+python -u Train_model.py  -i "/data/brussel/104/vsc10421/onedrive/hydra-sync/output_patches" -multi "/data/brussel/104/vsc10421/onedrive/hydra-sync/5 species and other" -lh species_code -idh tree_id -w 120 -ts 12 -nc 6 --no_cuda --batch_size 32 --epochs 2 --alpha 0.5 --task 'multiclass' --undersample --spatio_temp
