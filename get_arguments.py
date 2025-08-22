@@ -111,8 +111,8 @@ def get_arguments():
     parser.add_argument('--lam3', default=10, type=float)
     parser.add_argument('--final_mlp_style', default='sep', type=str, choices=['common', 'sep'])
 
-    # args = parser.parse_args()
+    args = parser.parse_args()
     #
-    # args.use_cuda = torch.cuda.is_available() and not args.no_cuda
+    args.use_cuda = torch.cuda.is_available() and not args.no_cuda
 
-    return parser.parse_args()
+    return args
