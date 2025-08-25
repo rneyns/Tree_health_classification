@@ -1,6 +1,10 @@
 import sklearn
 import torch.nn as nn
 import numpy as np
+import torch
+import wandb
+from sklearn.metrics import precision_score, recall_score
+from augmentations import embed_data_mask
 
 
 def class_wise_acc(y_pred, y_test, num_classes):
@@ -127,14 +131,14 @@ def valid(args, model, device, dataloader):
         # calculating the kappa value
         # print(np.array(_out),np.array(_label))
         kappa = sklearn.metrics.cohen_kappa_score(np.array(_out), np.array(_label))
-        F1 = sklearn.metrics.f1_score(np.array(_out), np.array(_label), average='micro')
+        f1 = sklearn.metrics.f1_score(np.array(_out), np.array(_label), average='micro')
         precision_per_class = precision_score(np.array(_label), np.array(_out), average=None)
         recall_per_class = recall_score(np.array(_label), np.array(_out), average=None)
 
         # print(sklearn.metrics.confusion_matrix(np.array(_out),np.array(_label)))
 
         log = {"loss_val": float(_loss) / counter, "loss_img_val": float(_loss_a) / counter,
-               "loss_tab_val": float(loss_v) / counter, "kappa": kappa, 'F1': F1}
+               "loss_tab_val": float(loss_v) / counter, "kappa": kappa, 'F1': f1}
         for i in range(args.numClasses):
             log.update({f"class{i}_precision": precision_per_class[i]})
             log.update({f"class{i}_recall": recall_per_class[i]})
