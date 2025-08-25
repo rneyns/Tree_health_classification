@@ -136,7 +136,7 @@ if __name__ == "__main__":
                                                                                             trainloader, optimizer,
                                                                                             scheduler, ratio_a)
 
-            acc, acc_a, acc_v = valid(args, model, device, test_dataloader)
+            acc, acc_a, acc_v = valid(args, model, device, validloader)
 
             wandb.log({"Accuracy": acc, "acc_img": acc_a, "acc_tab": acc_v, "epoch": epoch})
 
