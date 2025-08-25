@@ -36,21 +36,9 @@ def valid(args, model, device, dataloader):
     total_correct_sum = np.zeros(args.numClasses)
     total_val_batch_sum = np.zeros(args.numClasses)
 
-    if args.dataset == 'VGGSound':
-        n_classes = 309
-    elif args.dataset == 'KineticSound':
-        n_classes = 31
-    elif args.dataset == 'CREMAD':
-        n_classes = 6
-    elif args.dataset == 'AVE':
-        n_classes = 28
-    elif args.dataset == 'CGMNIST':
-        n_classes = 10
-    elif args.dataset == 'TREES':
-        n_classes = args.numClasses
 
-    else:
-        raise NotImplementedError('Incorrect dataset name {}'.format(args.dataset))
+    n_classes = args.numClasses
+
 
     with torch.no_grad():
         model.eval()
