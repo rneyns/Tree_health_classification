@@ -1,5 +1,6 @@
 import sklearn
 import torch.nn as nn
+import numpy as np
 
 
 def class_wise_acc(y_pred, y_test, num_classes):
