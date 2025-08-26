@@ -4,7 +4,8 @@ import numpy as np
 import torch
 import wandb
 from sklearn.metrics import precision_score, recall_score
-from augmentations import embed_data_mask
+from Training import prepare_data_embedding
+
 
 
 def class_wise_acc(y_pred, y_test, num_classes):
@@ -52,19 +53,13 @@ def valid(args, model, device, dataloader):
         acc_a = [0.0 for _ in range(n_classes)]
         acc_v = [0.0 for _ in range(n_classes)]
 
-        for step, (image, x_categ, x_cont, label, cat_mask, con_mask) in enumerate(dataloader):
 
-            x_categ = x_categ.to(device)  # B x 4 x 12
-            x_cont = x_cont.to(device)  # B x 4 x 12
-            cat_mask = cat_mask.to(device)  # B x 4 x 12
-            con_mask = con_mask.to(device)  # B x 4 x 12
-            image = image.to(device)  # B x 1(image count) x 3 x 224 x 224
-            label = label.to(device)
+        for step, data in enumerate(dataloader):
+            # Forward pass
+            image, x_categ_enc, x_cont_enc, con_mask, label = prepare_data_embedding(data, args, model, device)
 
-            _, x_categ_enc, x_cont_enc = embed_data_mask(x_categ, x_cont, cat_mask, con_mask, model.tab_net,
-                                                         vision_dset=True)
+            a, v, out = model(image, x_categ_enc, x_cont_enc, con_mask)
 
-            a, v, out = model(image, x_categ_enc, x_cont_enc)  # gray colored
 
             loss = criterion(out, label)
             loss_v = criterion(v, label)
