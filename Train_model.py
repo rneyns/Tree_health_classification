@@ -66,6 +66,9 @@ if __name__ == "__main__":
     model.load_state_dict(model_dict)
 
     print("Loaded pretrained weights into matching layers")
+    print(f"Total pretrained layers: {len(pretrained_dict)}")
+    print(f"Layers matched and loaded: {len(pretrained_dict_filtered)}")
+    print(f"Layers in your model: {len(model_dict)}")
 
     model.to(device)
 
