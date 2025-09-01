@@ -47,8 +47,6 @@ if __name__ == "__main__":
 
 
     # cat_dims = np.append(np.array([1]),np.array(cat_dims)).astype(int) #Appending 1 for CLS token, this is later used to generate embeddings.
-
-
     # Initialize the models
     model = initialize_model(args, device, cat_dims, con_idxs)
 
@@ -58,17 +56,13 @@ if __name__ == "__main__":
     pretrained_dict = pretrained_resnet.state_dict()
     model_dict = model.state_dict()
 
-    # Filter out weights that don’t match
-    pretrained_dict_filtered = {k: v for k, v in pretrained_dict.items() if k in model_dict and v.size() == model_dict[k].size()}
+    from collections import OrderedDict
 
-    # Update the model dict
-    model_dict.update(pretrained_dict_filtered)
-    model.load_state_dict(model_dict)
-
-    print("Loaded pretrained weights into matching layers")
-    print(f"Total pretrained layers: {len(pretrained_dict)}")
-    print(f"Layers matched and loaded: {len(pretrained_dict_filtered)}")
-    print(f"Layers in your model: {len(model_dict)}")
+    prefixed = OrderedDict((f"img_net.{k}", v) for k, v in pretrained_resnet.state_dict().items())
+    missing, unexpected = model.load_state_dict(prefixed, strict=False)
+    print("Loaded with prefixed keys (img_net.)")
+    print("Missing:", missing[:10])
+    print("Unexpected:", unexpected[:10])
 
     model.to(device)
 
