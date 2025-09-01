@@ -162,3 +162,29 @@ def train_epoch(args, epoch, model, device, dataloader, optimizer, scheduler, ra
 
     return _loss / len(dataloader), _loss_a / len(dataloader), _loss_v / len(dataloader), _a_angle / len(dataloader), \
            _v_angle / len(dataloader), _ratio_a / len(dataloader)
+
+def train_epoch_tab(args, epoch, model, device, dataloader, optimizer, scheduler, ratio_a, writer=None):
+    criterion = nn.CrossEntropyLoss()
+    softmax = nn.Softmax(dim=1)
+    relu = nn.ReLU(inplace=True)
+    tanh = nn.Tanh()
+
+    model.train()
+    print("Start training tab transformer ... ")
+
+    for step, data in enumerate(dataloader):
+        # Forward pass
+        optimizer.zero_grad()
+        image, x_categ_enc, x_cont_enc, con_mask, label = prepare_data_embedding(data, args, model, device)
+
+        a, v, out = model(image, x_categ_enc, x_cont_enc, con_mask)
+
+        loss_v = criterion(v, label)
+
+        loss_v.backward()  # Backward pass
+
+        if step % 10 == 0:
+            wandb.log({"loss_tab": loss_v})
+
+    if args.optimizer == 'SGD':
+        scheduler.step()

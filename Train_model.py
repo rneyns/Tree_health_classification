@@ -29,7 +29,7 @@ if __name__ == "__main__":
 
     from get_arguments import get_arguments
     from Dataloader_init import dataloader_init
-    from Training import train_epoch
+    from Training import train_epoch, train_epoch_tab
     from Utils import valid
     from Model import initialize_model
 
@@ -127,30 +127,41 @@ if __name__ == "__main__":
 
         for epoch in range(args.epochs):
 
-            print('Epoch: {}: '.format(epoch))
-
-            batch_loss, batch_loss_a, batch_loss_v, a_angle, v_angle, ratio_a = train_epoch(args, epoch, model, device,
-                                                                                            trainloader, optimizer,
-                                                                                            scheduler, ratio_a)
-
-            acc, acc_a, acc_v = valid(args, model, device, validloader)
-
-            wandb.log({"Accuracy": acc, "acc_img": acc_a, "acc_tab": acc_v, "epoch": epoch})
-
-            print('epoch: ', epoch, 'loss: ', batch_loss, batch_loss_a, batch_loss_v)
-            print('epoch: ', epoch, 'acc: ', acc, 'acc_a: ', acc_a, 'acc_v: ', acc_v)
-            print('epoch: ', epoch, 'a_angle: ', a_angle, 'v_angle: ', v_angle)
-
-            if acc > best_acc:
+            if epoch < 10:
+                train_epoch_tab(args, epoch, model, device, trainloader, optimizer, scheduler, ratio_a)
+                acc, acc_a, acc_v = valid(args, model, device, validloader)
+                wandb.log({"Accuracy": acc, "acc_img": acc_a, "acc_tab": acc_v, "epoch": epoch})
+                print('epoch: ', epoch, 'acc: ', acc, 'acc_a: ', acc_a, 'acc_v: ', acc_v)
                 if acc > best_acc:
-                    best_acc = float(acc)
+                    if acc > best_acc:
+                        best_acc = float(acc)
 
-                print('Saving model....')
-                torch.save(
-                    {
-                        'model': model.state_dict(),
-                        'optimizer': optimizer.state_dict()
-                    },
-                    '/theia/scratch/brussel/104/vsc10421/model{}_epoch.pt'.format(args.numClasses))
-                print('Saved model!!!')
+                print('Epoch: {}: '.format(epoch))
+
+            else:
+
+                batch_loss, batch_loss_a, batch_loss_v, a_angle, v_angle, ratio_a = train_epoch(args, epoch, model, device,
+                                                                                                trainloader, optimizer,
+                                                                                                scheduler, ratio_a)
+
+                acc, acc_a, acc_v = valid(args, model, device, validloader)
+
+                wandb.log({"Accuracy": acc, "acc_img": acc_a, "acc_tab": acc_v, "epoch": epoch})
+
+                print('epoch: ', epoch, 'loss: ', batch_loss, batch_loss_a, batch_loss_v)
+                print('epoch: ', epoch, 'acc: ', acc, 'acc_a: ', acc_a, 'acc_v: ', acc_v)
+                print('epoch: ', epoch, 'a_angle: ', a_angle, 'v_angle: ', v_angle)
+
+                if acc > best_acc:
+                    if acc > best_acc:
+                        best_acc = float(acc)
+
+                    print('Saving model....')
+                    torch.save(
+                        {
+                            'model': model.state_dict(),
+                            'optimizer': optimizer.state_dict()
+                        },
+                        '/theia/scratch/brussel/104/vsc10421/model{}_epoch.pt'.format(args.numClasses))
+                    print('Saved model!!!')
 
