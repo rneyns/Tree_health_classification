@@ -61,7 +61,7 @@ if __name__ == "__main__":
     prefixed = OrderedDict((f"img_net.{k}", v) for k, v in pretrained_resnet.state_dict().items())
     missing, unexpected = model.load_state_dict(prefixed, strict=False)
     print("Loaded with prefixed keys (img_net.)")
-    print("Missing:", missing[:10])
+    print("Missing:", missing)
     print("Unexpected:", unexpected[:10])
 
     model.to(device)

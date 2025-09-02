@@ -129,7 +129,7 @@ if __name__ == "__main__":
     #shapefile = '/Users/robbe_neyns/Library/CloudStorage/OneDrive-VrijeUniversiteitBrussel/Documenten/Research/UHI_tree health/Data analysis/Tree mapping/Tree locations/flai layers/tree_centroids_x_y_lambert.shp'  # Path to the shapefile with coordinates
     tiles_folder = "/Users/robbe_neyns/Documents/research/UHI tree health/merged_tiles"  # Path to the folder containing the ortho tiles
     output_folder = "/Users/robbe_neyns/Documents/research/UHI tree health/output_patches"
-    output_folder = "/Users/robbe_neyns/Documents/research/UHI tree health/output_patches_apply"  # Path where the patches will be saved
+    #output_folder = "/Users/robbe_neyns/Documents/research/UHI tree health/output_patches_apply"  # Path where the patches will be saved
     extent_library_path = "tile_extents.pkl"  # Path to save/load the tile extents library
 
     # Create output folder if it doesn't exist

@@ -24,7 +24,7 @@ from datetime import datetime
 # --- USER INPUTS ---
 image_folder = '/Users/robbe_neyns/Library/CloudStorage/OneDrive-VrijeUniversiteitBrussel/Documenten/Research/UHI_tree health/Data analysis/PlanetScope preprocessing/Old PlanetScope data'
 tree_points_file = '/Users/robbe_neyns/Library/CloudStorage/OneDrive-VrijeUniversiteitBrussel/Documenten/Research/UHI_tree health/Data analysis/Tree mapping/Tree locations/Brussels Environment Layers/mobiliteit_shape_manual_adjustment_project/mobiliteit_shape_manual_adjustment_X_Y.shp'  # or .geojson
-tree_points_file = '/Users/robbe_neyns/Library/CloudStorage/OneDrive-VrijeUniversiteitBrussel/Documenten/Research/UHI_tree health/Data analysis/Tree mapping/Tree locations/flai layers/tree_centroids_x_y_lambert.shp'
+#tree_points_file = '/Users/robbe_neyns/Library/CloudStorage/OneDrive-VrijeUniversiteitBrussel/Documenten/Research/UHI_tree health/Data analysis/Tree mapping/Tree locations/flai layers/tree_centroids_x_y_lambert.shp'
 output_folder = '/Users/robbe_neyns/Library/CloudStorage/OneDrive-VrijeUniversiteitBrussel/Documenten/Research/UHI_tree health/Data analysis/Tree mapping apply'
 
 # Species string-to-code mapping
