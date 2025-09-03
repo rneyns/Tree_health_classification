@@ -130,27 +130,29 @@ if __name__ == "__main__":
         for epoch in range(args.epochs):
 
             if epoch < 50:
+                model.eval()
+                with torch.no_grad():
+                    accuracy, auroc, kappa = classification_scores(model, validloader, device, args.task,
+                                                                   False)
+                    test_accuracy, test_auroc, test_kappa = classification_scores(model, testloader, device,
+                                                                                  args.task, False)
+                    acc_classwise, conf_matrix = class_wise_acc_(model, validloader, device)
+                    print('[EPOCH %d] VALID ACCURACY: %.3f, VALID AUROC: %.3f, VALID KAPPA: %.3f' %
+                          (epoch + 1, accuracy, auroc, kappa))
+                    print('[EPOCH %d] TEST ACCURACY: %.3f, TEST AUROC: %.3f, TEST KAPPA: %.3f' %
+                          (epoch + 1, test_accuracy, test_auroc, test_kappa))
+                    print(f"class_wise_accuracies: {acc_classwise}")
+                    print(f"confusion matrix: {conf_matrix}")
+                    wandb.log({"acc_tab": accuracy, "epoch": epoch})
+
+                model.train()
+
                 train_epoch_tab(args, epoch, model, device, trainloader, optimizer, scheduler, ratio_a)
                 acc, acc_a, acc_v = valid(args, model, device, validloader)
 
 
                 print('Epoch: {}: '.format(epoch))
-                if epoch % 1 == 0:
-                    model.eval()
-                    with torch.no_grad():
-                        if args.task in ['binary', 'multiclass']:
-                            accuracy, auroc, kappa = classification_scores(model, validloader, device, args.task,
-                                                                           False)
-                            test_accuracy, test_auroc, test_kappa = classification_scores(model, testloader, device,
-                                                                                          args.task, False)
-                            acc_classwise, conf_matrix = class_wise_acc_(model, validloader, device)
-                            print('[EPOCH %d] VALID ACCURACY: %.3f, VALID AUROC: %.3f, VALID KAPPA: %.3f' %
-                                  (epoch + 1, accuracy, auroc, kappa))
-                            print('[EPOCH %d] TEST ACCURACY: %.3f, TEST AUROC: %.3f, TEST KAPPA: %.3f' %
-                                  (epoch + 1, test_accuracy, test_auroc, test_kappa))
-                            print(f"class_wise_accuracies: {acc_classwise}")
-                            print(f"confusion matrix: {conf_matrix}")
-                            wandb.log({"acc_tab": accuracy, "epoch": epoch})
+
 
             else:
 
