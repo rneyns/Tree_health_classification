@@ -125,7 +125,7 @@ if __name__ == "__main__":
         ratio_a = torch.Tensor([1]).to(device)
 
         # tell wandb what is happening in the model
-        wandb.watch(model, log="all", log_freq=10)
+        #wandb.watch(model, log="all", log_freq=10)
 
         for epoch in range(args.epochs):
 
@@ -143,12 +143,12 @@ if __name__ == "__main__":
                           (epoch + 1, test_accuracy, test_auroc, test_kappa))
                     print(f"class_wise_accuracies: {acc_classwise}")
                     print(f"confusion matrix: {conf_matrix}")
-                    wandb.log({"acc_tab": accuracy, "epoch": epoch})
+                    wandb.log({"acc_tab": accuracy, "accuracy_extra_test": accuracy, 'auroc': auroc, "epoch": epoch})
 
                 model.train()
 
                 train_epoch_tab(args, epoch, model, device, trainloader, optimizer, scheduler, ratio_a)
-                acc, acc_a, acc_v = valid(args, model, device, validloader)
+                #acc, acc_a, acc_v = valid(args, model, device, validloader)
 
 
                 print('Epoch: {}: '.format(epoch))
@@ -162,7 +162,7 @@ if __name__ == "__main__":
 
                 acc, acc_a, acc_v = valid(args, model, device, validloader)
 
-                wandb.log({"Accuracy": acc, "acc_img": acc_a, "acc_tab": acc_v, "epoch": epoch})
+                #wandb.log({"Accuracy": acc, "acc_img": acc_a, "acc_tab": acc_v, "epoch": epoch})
 
                 print('epoch: ', epoch, 'loss: ', batch_loss, batch_loss_a, batch_loss_v)
                 print('epoch: ', epoch, 'acc: ', acc, 'acc_a: ', acc_a, 'acc_v: ', acc_v)
