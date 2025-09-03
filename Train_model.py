@@ -135,7 +135,7 @@ if __name__ == "__main__":
 
 
                 print('Epoch: {}: '.format(epoch))
-                if epoch % 5 == 0:
+                if epoch % 2 == 0:
                     model.eval()
                     with torch.no_grad():
                         if opt.task in ['binary', 'multiclass']:

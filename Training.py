@@ -195,3 +195,32 @@ def train_epoch_tab(args, epoch, model, device, dataloader, optimizer, scheduler
         if step % 10 == 0:
             wandb.log({"loss_tab": loss})
 
+def train_epoch_img(args, epoch, model, device, dataloader, optimizer, scheduler, ratio_a, writer=None):
+    criterion = nn.CrossEntropyLoss()
+    softmax = nn.Softmax(dim=1)
+    relu = nn.ReLU(inplace=True)
+    tanh = nn.Tanh()
+
+    model.train()
+    print("Start training tab transformer ... ")
+
+    for step, data in enumerate(dataloader):
+        # Forward pass
+        optimizer.zero_grad()
+        # x_categ is the the categorical data, with y appended as last feature. x_cont has continuous data. cat_mask is an array of ones same shape as x_categ except for last column(corresponding to y's) set to 0s. con_mask is an array of ones same shape as x_cont.
+        image, _, _, _, _, y_gts = data[0].to(device), data[1].to(device).type(torch.float32), data[2].to(
+            device).type(torch.float32), data[3].to(device).type(torch.float32), data[4].type(torch.float32).to(
+            device),data[5].to(device, dtype=torch.long)#,data[6].to(device).type(torch.float32)
+        # We are converting the data to embeddings in the next step
+
+        y_outs = model.img_net(image)
+
+        loss = criterion(y_outs, y_gts.squeeze())
+        loss.backward()
+        optimizer.step()
+        # print(running_loss)
+
+        if step % 10 == 0:
+            wandb.log({"loss_tab": loss})
+
+
