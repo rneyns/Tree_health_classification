@@ -33,6 +33,8 @@ if __name__ == "__main__":
     from Utils import valid
     from Model import initialize_model
 
+    from utils_.utils import count_parameters, classification_scores, mean_sq_error, class_wise_acc_
+
     import wandb
 
 
@@ -81,7 +83,7 @@ if __name__ == "__main__":
         optimizer = optim.Adagrad(model.parameters(), lr=args.learning_rate)
         scheduler = None
     elif args.optimizer == 'Adam':
-        optimizer = optim.Adam([
+        optimizer = optim.AdamW([
             {"params": parameters_tab},
             {"params": parameters_img},
         ], lr=args.learning_rate,
@@ -127,16 +129,27 @@ if __name__ == "__main__":
 
         for epoch in range(args.epochs):
 
-            if epoch < 10:
+            if epoch < 50:
                 train_epoch_tab(args, epoch, model, device, trainloader, optimizer, scheduler, ratio_a)
                 acc, acc_a, acc_v = valid(args, model, device, validloader)
-                wandb.log({"Accuracy": acc, "acc_img": acc_a, "acc_tab": acc_v, "epoch": epoch})
-                print('epoch: ', epoch, 'acc: ', acc, 'acc_a: ', acc_a, 'acc_v: ', acc_v)
-                if acc > best_acc:
-                    if acc > best_acc:
-                        best_acc = float(acc)
+
 
                 print('Epoch: {}: '.format(epoch))
+                if epoch % 5 == 0:
+                    model.eval()
+                    with torch.no_grad():
+                        if opt.task in ['binary', 'multiclass']:
+                            accuracy, auroc, kappa = classification_scores(model, validloader, device, args.task,
+                                                                           False)
+                            test_accuracy, test_auroc, test_kappa = classification_scores(model, testloader, device,
+                                                                                          args.task, False)
+                            acc_classwise, conf_matrix = class_wise_acc_(model, validloader, device)
+                            print('[EPOCH %d] VALID ACCURACY: %.3f, VALID AUROC: %.3f, VALID KAPPA: %.3f' %
+                                  (epoch + 1, accuracy, auroc, kappa))
+                            print('[EPOCH %d] TEST ACCURACY: %.3f, TEST AUROC: %.3f, TEST KAPPA: %.3f' %
+                                  (epoch + 1, test_accuracy, test_auroc, test_kappa))
+                            print(f"class_wise_accuracies: {acc_classwise}")
+                            print(f"confusion matrix: {conf_matrix}")
 
             else:
 

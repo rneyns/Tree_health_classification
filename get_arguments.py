@@ -69,7 +69,7 @@ def get_arguments():
     parser.add_argument('--gpu', type=int, default=0)  # gpu
     parser.add_argument('--no_cuda', action='store_true', help='Disable CUDA')
 
-    parser.add_argument('--task', required=True, default='clf', type=str,
+    parser.add_argument('--task', required=True, default='multiclass', type=str,
                         choices=['binary', 'multiclass', 'regression', 'clf'])
     parser.add_argument('--cont_embeddings', default='spatio-temporal', type=str, choices=['MLP', 'spatio-temporal'])
     parser.add_argument('--embedding_size', default=32, type=int)

@@ -175,16 +175,28 @@ def train_epoch_tab(args, epoch, model, device, dataloader, optimizer, scheduler
     for step, data in enumerate(dataloader):
         # Forward pass
         optimizer.zero_grad()
-        image, x_categ_enc, x_cont_enc, con_mask, label = prepare_data_embedding(data, args, model, device)
+        # x_categ is the the categorical data, with y appended as last feature. x_cont has continuous data. cat_mask is an array of ones same shape as x_categ except for last column(corresponding to y's) set to 0s. con_mask is an array of ones same shape as x_cont.
+        image, ids, DOY, x_categ, x_cont, y_gts = data[0].to(device), data[1].to(device).type(torch.float32), data[2].to(
+            device).type(torch.float32), data[3].to(device).type(torch.float32), data[4].type(torch.float32).to(
+            device),data[5].to(device).type(torch.LongTensor)#,data[6].to(device).type(torch.float32)
+        print(f"x_categ shape: {x_categ.shape}")
+        print(f"x_cont shape: {x_cont.shape}")
+        print(f"y_gts: {y_gts}")
+        # We are converting the data to embeddings in the next step
+        _, x_categ_enc, x_cont_enc, con_mask = embed_data_mask(x_categ, x_cont, model, False, DOY=DOY)
+        print(f"x_categ_enc shape: {x_categ_enc.shape}")
+        print(f"x_cont_enc shape: {x_cont_enc.shape}")
+        print(f"con_mask shape: {con_mask.shape}")
+        reps = model.tab_net.transformer(x_categ_enc, x_cont_enc, con_mask)
+        # select only the representations corresponding to y and apply mlp on it in the next step to get the predictions.
+        y_reps = reps[:, 0, :]
+        y_outs = model.tab_net.mlpfory(y_reps)
 
-        a, v, out = model(image, x_categ_enc, x_cont_enc, con_mask)
-
-        loss_v = criterion(v, label)
-
-        loss_v.backward()  # Backward pass
+        loss = criterion(y_outs, y_gts.squeeze())
+        loss.backward()
+        optimizer.step()
+        # print(running_loss)
 
         if step % 10 == 0:
-            wandb.log({"loss_tab": loss_v})
+            wandb.log({"loss_tab": loss})
 
-    if args.optimizer == 'SGD':
-        scheduler.step()
