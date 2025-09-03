@@ -135,10 +135,10 @@ if __name__ == "__main__":
 
 
                 print('Epoch: {}: '.format(epoch))
-                if epoch % 2 == 0:
+                if epoch % 1 == 0:
                     model.eval()
                     with torch.no_grad():
-                        if opt.task in ['binary', 'multiclass']:
+                        if args.task in ['binary', 'multiclass']:
                             accuracy, auroc, kappa = classification_scores(model, validloader, device, args.task,
                                                                            False)
                             test_accuracy, test_auroc, test_kappa = classification_scores(model, testloader, device,
@@ -150,6 +150,7 @@ if __name__ == "__main__":
                                   (epoch + 1, test_accuracy, test_auroc, test_kappa))
                             print(f"class_wise_accuracies: {acc_classwise}")
                             print(f"confusion matrix: {conf_matrix}")
+                            wandb.log({"acc_tab": accuracy, "epoch": epoch})
 
             else:
 

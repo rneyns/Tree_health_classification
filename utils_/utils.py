@@ -87,9 +87,9 @@ def imputations_acc_justy(model, dloader, device):
                 device).type(torch.float32), data[3].to(device).type(torch.float32), data[4].type(torch.LongTensor).to(
                 device),data[5].to(device,type=torch.long)#,data[6].to(device).type(torch.float32)
             _, x_categ_enc, x_cont_enc, con_mask = embed_data_mask(x_categ, x_cont, model, vision_dset, DOY=DOY)
-            reps = model.transformer(x_categ_enc, x_cont_enc, con_mask)
-            y_reps = reps[:, model.num_categories - 1, :]
-            y_outs = model.mlpfory(y_reps)
+            reps = model.tab_net.transformer(x_categ_enc, x_cont_enc, con_mask)
+            y_reps = reps[:, 0, :]
+            y_outs = model.tab_net.mlpfory(y_reps)
             # import ipdb; ipdb.set_trace()
             y_test = torch.cat([y_test, x_categ[:, -1].float()], dim=0)
             y_pred = torch.cat([y_pred, torch.argmax(m(y_outs), dim=1).float()], dim=0)
@@ -114,9 +114,9 @@ def multiclass_acc_justy(model, dloader, device):
                 device).type(torch.float32), data[3].to(device).type(torch.float32), data[4].type(torch.LongTensor).to(
                 device) ,data[5].to(device,type=torch.long)#,data[6].to(device).type(torch.float32)
             _, x_categ_enc, x_cont_enc, con_mask = embed_data_mask(x_categ, x_cont, model, vision_dset, DOY=DOY)
-            reps = model.transformer(x_categ_enc, x_cont_enc, con_mask)
-            y_reps = reps[:, model.num_categories - 1, :]
-            y_outs = model.mlpfory(y_reps)
+            reps = model.tab_net.transformer(x_categ_enc, x_cont_enc, con_mask)
+            y_reps = reps[:, 0, :]
+            y_outs = model.tab_net.mlpfory(y_reps)
             # import ipdb; ipdb.set_trace()
             y_test = torch.cat([y_test, x_categ[:, -1].float()], dim=0)
             y_pred = torch.cat([y_pred, torch.argmax(m(y_outs), dim=1).float()], dim=0)
@@ -158,9 +158,9 @@ def class_wise_acc_(model, dloader, device):
                 device).type(torch.float32), data[3].to(device).type(torch.float32), data[4].type(torch.LongTensor).to(
                 device),data[5].to(device, type=torch.long)#,data[6].to(device).type(torch.float32)
             _, x_categ_enc, x_cont_enc, con_mask = embed_data_mask(x_categ, x_cont, model, vision_dset, DOY=DOY)
-            reps = model.transformer(x_categ_enc, x_cont_enc, con_mask)
+            reps = model.tab_net.transformer(x_categ_enc, x_cont_enc, con_mask)
             y_reps = reps[:, 0, :]
-            y_outs = model.mlpfory(y_reps)
+            y_outs = model.tab_net.mlpfory(y_reps)
             # import ipdb; ipdb.set_trace()
             y_test = torch.cat([y_test, y_gts], dim=0)
             y_pred = torch.cat([y_pred, y_outs], dim=0)
@@ -187,9 +187,9 @@ def classification_scores(model, dloader, device, task, vision_dset):
                 device).type(torch.float32), data[3].to(device).type(torch.float32), data[4].type(torch.float32).to(
                 device) ,data[5].to(device, torch.long)#,data[6].to(device).type(torch.float32)
             _, x_categ_enc, x_cont_enc, con_mask = embed_data_mask(x_categ, x_cont, model, vision_dset, DOY=DOY)
-            reps = model.transformer(x_categ_enc, x_cont_enc, con_mask)
+            reps = model.tab_net.transformer(x_categ_enc, x_cont_enc, con_mask)
             y_reps = reps[:, 0, :]
-            y_outs = model.mlpfory(y_reps)
+            y_outs = model.tab_net.mlpfory(y_reps)
             # import ipdb; ipdb.set_trace()
             y_test = torch.cat([y_test, y_gts.squeeze().float()], dim=0)
             y_pred = torch.cat([y_pred, torch.argmax(y_outs, dim=1).float()], dim=0)
@@ -215,9 +215,9 @@ def mean_sq_error(model, dloader, device, vision_dset):
                 device).type(torch.float32), data[3].to(device).type(torch.float32), data[4].type(torch.LongTensor).to(
                 device),data[5].to(device, type=torch.long)#,data[6].to(device).type(torch.float32)
             _, x_categ_enc, x_cont_enc, con_mask = embed_data_mask(x_categ, x_cont, model, vision_dset, DOY=DOY)
-            reps = model.transformer(x_categ_enc, x_cont_enc, con_mask)
+            reps = model.tab_net.transformer(x_categ_enc, x_cont_enc, con_mask)
             y_reps = reps[:, 0, :]
-            y_outs = model.mlpfory(y_reps)
+            y_outs = model.tab_net.mlpfory(y_reps)
             y_test = torch.cat([y_test, y_gts.squeeze().float()], dim=0)
             y_pred = torch.cat([y_pred, y_outs], dim=0)
         # import ipdb; ipdb.set_trace()
