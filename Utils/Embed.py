@@ -106,7 +106,8 @@ class Embedding(nn.Module):
         # them to the pad value as a form of regularization
         if self.pad_value is None:
             return None
-        return (y != self.pad_value).any(-1, keepdim=False)
+        pv = torch.as_tensor(self.pad_value, dtype=y.dtype, device=y.device)
+        return (y != pv).any(-1)
 
     def temporal_embed(self, y: torch.Tensor, x: torch.Tensor):
         bs, length, d_y = y.shape
