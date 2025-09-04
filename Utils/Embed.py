@@ -11,6 +11,7 @@ import torch.nn.functional as F
 from einops import rearrange, repeat
 from Utils.time2vec import Time2Vec
 import numpy as np
+import math
 
 
 
@@ -106,7 +107,28 @@ class Embedding(nn.Module):
         # them to the pad value as a form of regularization
         if self.pad_value is None:
             return None
-        pv = torch.as_tensor(self.pad_value, dtype=y.dtype, device=y.device)
+
+        if torch.is_floating_point(y):
+            pv = torch.as_tensor(self.pad_value, dtype=y.dtype, device=y.device)
+            return (y != pv).any(-1)
+
+        # Integer tensor path
+        # If pad_value is NaN/inf or non-integer, it can't equal any int element → all True
+        if isinstance(self.pad_value, float) and not math.isfinite(self.pad_value):
+            return torch.ones(y.shape[:-1], dtype=torch.bool, device=y.device)
+
+        # Try to make a Python int; if that overflows, it's unrepresentable → all True
+        try:
+            val = int(self.pad_value)
+        except (ValueError, OverflowError):
+            return torch.ones(y.shape[:-1], dtype=torch.bool, device=y.device)
+
+        info = torch.iinfo(y.dtype)
+        if val < info.min or val > info.max:
+            # Unrepresentable in y’s dtype → no element can equal it
+            return torch.ones(y.shape[:-1], dtype=torch.bool, device=y.device)
+
+        pv = torch.tensor(val, dtype=y.dtype, device=y.device)
         return (y != pv).any(-1)
 
     def temporal_embed(self, y: torch.Tensor, x: torch.Tensor):
