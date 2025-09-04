@@ -232,7 +232,8 @@ class Embedding(nn.Module):
         y_original = Flatten(y_original)
         y = self.data_drop(y)
         y = Flatten(y)
-        mask = self.make_mask(y).long() ## why a mask? what does this doe? maybe deal with bad values? --> a mask will deal with sequences of variable length; padding in transformers refers to a value used to fill up a sequence so every vector in the batch is the same length, the attention scores of these pad values are masked as to not influence the outcome
+        print(f"y dtype is: {y.dtype}")
+        mask = self.make_mask(y).long() ## why a mask? what does this do? maybe deal with bad values? --> a mask will deal with sequences of variable length; padding in transformers refers to a value used to fill up a sequence so every vector in the batch is the same length, the attention scores of these pad values are masked as to not influence the outcome
 
         # concat time_emb, y --> FF --> val_time_emb
         val_time_inp = torch.cat((time_emb, y), dim=-1) 
