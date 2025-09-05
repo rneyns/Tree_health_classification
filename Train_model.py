@@ -32,6 +32,7 @@ if __name__ == "__main__":
     from Training import train_epoch, train_epoch_tab
     from Utils import valid
     from Model import initialize_model
+    from models import SAINT
 
     from utils_.utils import count_parameters, classification_scores, mean_sq_error, class_wise_acc_
 
@@ -42,13 +43,11 @@ if __name__ == "__main__":
 
     #setup_seed(args.random_seed)
     device = torch.device('cuda:' + str(args.gpu) if args.use_cuda else 'cpu')
+    device = torch.device("mps")
     print("Using device: ", device)
 
     trainloader, validloader, testloader, cat_dims, con_idxs, y_dim, DOY, w0_norm, w1_norm, args = dataloader_init(args)
 
-
-
-    # cat_dims = np.append(np.array([1]),np.array(cat_dims)).astype(int) #Appending 1 for CLS token, this is later used to generate embeddings.
     # Initialize the models
     model = initialize_model(args, device, cat_dims, con_idxs)
 
@@ -62,37 +61,12 @@ if __name__ == "__main__":
 
     prefixed = OrderedDict((f"img_net.{k}", v) for k, v in pretrained_resnet.state_dict().items())
     missing, unexpected = model.load_state_dict(prefixed, strict=False)
-    print("Loaded with prefixed keys (img_net.)")
-    print("Missing:", missing)
-    print("Unexpected:", unexpected[:10])
+
+    vision_dset =  False
+    print(y_dim)
+    print(args.task)
 
     model.to(device)
-
-    parameters_tab = []
-    parameters_img = []
-    for name, param in model.named_parameters():
-        if 'img' in name or 'dem' in name:
-            parameters_img.append(param)
-        else:
-            parameters_tab.append(param)
-
-    if args.optimizer == 'SGD':
-        optimizer = optim.SGD(model.parameters(), lr=args.learning_rate, momentum=0.9, weight_decay=1e-4)
-        scheduler = optim.lr_scheduler.StepLR(optimizer, args.lr_decay_step, args.lr_decay_ratio)
-    elif args.optimizer == 'AdaGrad':
-        optimizer = optim.Adagrad(model.parameters(), lr=args.learning_rate)
-        scheduler = None
-    elif args.optimizer == 'Adam':
-        optimizer = optim.AdamW([
-            {"params": parameters_tab},
-            {"params": parameters_img},
-        ], lr=args.learning_rate,
-            betas=(0.9, 0.99),
-            weight_decay=1e-4)
-
-        optimizer.param_groups[1]['lr'] = 1e-5
-        optimizer.param_groups[0]['lr'] = 1e-4
-        scheduler = None
 
     wandb.login(key='f746dc65fb72b570908ed1dd5b2b780d7e438243')
     wandb.init(
@@ -112,11 +86,15 @@ if __name__ == "__main__":
             "DEM": "False"
         }
     )
-    wandb.save('Prototypical_modal_rebalance_and_saint.sh')
-    wandb.save('Prototypical_modal_rebalance_and_saint.py')
-    wandb.save('multi_modal_model_pytorch.py')
-    wandb.save('fusion_modules.py')
-    wandb.save('data_prep.py')
+
+    optimizer = optim.AdamW(model.parameters(), lr=0.0001)
+    scheduler = None
+
+    print("param_groups:", [len(g["params"]) for g in optimizer.param_groups])
+    print("LRs:", [g["lr"] for g in optimizer.param_groups])
+    trainable = sum(p.requires_grad for p in model.parameters())
+    in_opt = sum(p.numel() for g in optimizer.param_groups for p in g["params"])
+    print("trainable tensors:", trainable, "  params in opt groups:", in_opt)
 
     if args.train:
 
@@ -124,19 +102,21 @@ if __name__ == "__main__":
 
         ratio_a = torch.Tensor([1]).to(device)
 
-        # tell wandb what is happening in the model
-        #wandb.watch(model, log="all", log_freq=10)
-
         for epoch in range(args.epochs):
 
             if epoch < 50:
+
+                model.train()
+
+                train_epoch_tab(args, epoch, model.tab_net, device, trainloader, optimizer, scheduler, ratio_a=None)
+
                 model.eval()
                 with torch.no_grad():
-                    accuracy, auroc, kappa = classification_scores(model, validloader, device, args.task,
+                    accuracy, auroc, kappa = classification_scores(model.tab_net, validloader, device, args.task,
                                                                    False)
-                    test_accuracy, test_auroc, test_kappa = classification_scores(model, testloader, device,
+                    test_accuracy, test_auroc, test_kappa = classification_scores(model.tab_net, testloader, device,
                                                                                   args.task, False)
-                    acc_classwise, conf_matrix = class_wise_acc_(model, validloader, device)
+                    acc_classwise, conf_matrix = class_wise_acc_(model.tab_net, validloader, device)
                     print('[EPOCH %d] VALID ACCURACY: %.3f, VALID AUROC: %.3f, VALID KAPPA: %.3f' %
                           (epoch + 1, accuracy, auroc, kappa))
                     print('[EPOCH %d] TEST ACCURACY: %.3f, TEST AUROC: %.3f, TEST KAPPA: %.3f' %
@@ -144,10 +124,6 @@ if __name__ == "__main__":
                     print(f"class_wise_accuracies: {acc_classwise}")
                     print(f"confusion matrix: {conf_matrix}")
                     wandb.log({"acc_tab": accuracy, "accuracy_extra_test": accuracy, 'auroc': auroc, "epoch": epoch})
-
-                model.train()
-
-                train_epoch_tab(args, epoch, model, device, trainloader, optimizer, scheduler, ratio_a)
                 #acc, acc_a, acc_v = valid(args, model, device, validloader)
 
 

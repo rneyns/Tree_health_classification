@@ -72,7 +72,7 @@ def dataloader_init(args):
     ###################################
     if args.undersample:
         print("-----Under/oversampling the dataset-----")
-        dataset = resample(dataset, args.labelHeader, sampling="over", num_classes=2, NearMissV=3, seed=2)
+        dataset = resample(dataset, args.labelHeader, sampling="over", num_classes=args.numClasses, NearMissV=3, seed=2)
         print("-----Saving the undersampled dataset-----")
         dataset.to_csv("post_undersample_check.csv", index=False)
         print("----Number of samples after under/oversamling-----")

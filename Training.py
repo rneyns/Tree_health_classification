@@ -163,37 +163,129 @@ def train_epoch(args, epoch, model, device, dataloader, optimizer, scheduler, ra
     return _loss / len(dataloader), _loss_a / len(dataloader), _loss_v / len(dataloader), _a_angle / len(dataloader), \
            _v_angle / len(dataloader), _ratio_a / len(dataloader)
 
-def train_epoch_tab(args, epoch, model, device, dataloader, optimizer, scheduler, ratio_a, writer=None):
-    criterion = nn.CrossEntropyLoss()
-    softmax = nn.Softmax(dim=1)
-    relu = nn.ReLU(inplace=True)
-    tanh = nn.Tanh()
+def maybe_retain_grad(t):
+    if isinstance(t, torch.Tensor) and t.requires_grad:
+        t.retain_grad()
+
+def train_epoch_tab(args, epoch, model, device, dataloader, optimizer, scheduler, ratio_a, writer=None,
+                    debug_step0=True):
+    """
+    Single-epoch trainer for the tabular branch (SAINT). Adds robust sanity checks and
+    lightweight debug probes that run only on the first batch of the epoch.
+
+    - Targets shaped/typed correctly for CrossEntropyLoss
+    - Optional class weights via `ratio_a`
+    - Prints whether grads reach the head/backbone
+    - Probes that parameters actually change after optimizer.step()
+    - Scheduler stepped per-batch only if scheduler.by_step == True, else per-epoch at the end
+    - Logs scalar loss to wandb every 10 steps (if available)
+    """
+    import torch
+    from torch import nn
+
+    # Loss (weighted CE if you pass a 1D weight tensor in ratio_a)
+    if isinstance(ratio_a, torch.Tensor) and ratio_a.numel() > 1:
+        criterion = nn.CrossEntropyLoss(weight=ratio_a.to(device))
+    else:
+        criterion = nn.CrossEntropyLoss()
 
     model.train()
     print("Start training tab transformer ... ")
 
-    for step, data in enumerate(dataloader):
-        # Forward pass
-        optimizer.zero_grad()
-        # x_categ is the the categorical data, with y appended as last feature. x_cont has continuous data. cat_mask is an array of ones same shape as x_categ except for last column(corresponding to y's) set to 0s. con_mask is an array of ones same shape as x_cont.
-        image, ids, DOY, x_categ, x_cont, y_gts = data[0].to(device), data[1].to(device).type(torch.float32), data[2].to(
-            device).type(torch.float32), data[3].to(device).type(torch.float32), data[4].type(torch.float32).to(
-            device),data[5].to(device, dtype=torch.long)#,data[6].to(device).type(torch.float32)
-        # We are converting the data to embeddings in the next step
+    running_loss = 0.0
+    steps = 0
+
+    for step, batch in enumerate(dataloader):
+        # Unpack
+        image, ids, DOY, x_categ, x_cont, y_gts = batch
+
+        # Move + cast
+        DOY     = DOY.to(device, non_blocking=True).float()
+        x_categ = x_categ.to(device, non_blocking=True).float()
+        x_cont  = x_cont.to(device, non_blocking=True).float()
+        y_gts   = y_gts.to(device, non_blocking=True).long().view(-1)  # CE expects [N] Long
+
+        optimizer.zero_grad(set_to_none=True)
+
+        # Forward through embeddings and transformer
         _, x_categ_enc, x_cont_enc, con_mask = embed_data_mask(x_categ, x_cont, model, False, DOY=DOY)
+        reps   = model.transformer(x_categ_enc, x_cont_enc, con_mask)     # [N, T, D]
+        logits = model.mlpfory(reps[:, 0, :])                             # [N, C] (y-token)
 
-        reps = model.tab_net.transformer(x_categ_enc, x_cont_enc, con_mask)
-        # select only the representations corresponding to y and apply mlp on it in the next step to get the predictions.
-        y_reps = reps[:, 0, :]
-        y_outs = model.tab_net.mlpfory(y_reps)
+        # Shape & label sanity
+        assert logits.ndim == 2, f"logits must be [N,C], got {logits.shape}"
+        assert logits.size(0) == y_gts.size(0), f"N mismatch: {logits.size(0)} vs {y_gts.size(0)}"
+        C = logits.size(1)
+        assert y_gts.min().item() >= 0 and y_gts.max().item() < C, \
+            f"target out of range [{y_gts.min().item()}, {y_gts.max().item()}] for C={C}"
 
-        loss = criterion(y_outs, y_gts.squeeze())
+        # Optional: retain grads on intermediates, only if they require grad
+        if debug_step0 and step == 0:
+            def maybe_retain_grad(t):
+                if isinstance(t, torch.Tensor) and t.requires_grad:
+                    t.retain_grad()
+            maybe_retain_grad(x_categ_enc)
+            maybe_retain_grad(x_cont_enc)
+            maybe_retain_grad(reps)
+            maybe_retain_grad(logits)
+            with torch.no_grad():
+                w_before = torch.nn.utils.parameters_to_vector(
+                    [p for p in model.parameters() if p.requires_grad]
+                ).clone()
+
+        # Loss / backward
+        loss = criterion(logits, y_gts)
         loss.backward()
-        optimizer.step()
-        # print(running_loss)
 
+        # One-time debug readouts
+        if debug_step0 and step == 0:
+            head_has_grad = any(p.grad is not None for p in model.mlpfory.parameters() if p.requires_grad)
+            backbone_has_grad = any(p.grad is not None for p in model.transformer.parameters() if p.requires_grad)
+            print(f"[debug] requires_grad: logits={logits.requires_grad} reps={reps.requires_grad} "
+                  f"x_cont_enc={getattr(x_cont_enc, 'requires_grad', None)} "
+                  f"x_categ_enc={getattr(x_categ_enc, 'requires_grad', None)}")
+            print(f"[debug] head_has_grad={head_has_grad} backbone_has_grad={backbone_has_grad}")
+            if getattr(logits, "grad", None) is not None:
+                print(f"[debug] logits.grad |max|={(logits.grad.abs().max().item()):.3e}")
+            if getattr(reps, "grad", None) is not None:
+                print(f"[debug] reps.grad   |max|={(reps.grad.abs().max().item()):.3e}")
+
+        # Optimizer step
+        optimizer.step()
+
+        # Param delta probe (once)
+        if debug_step0 and step == 0:
+            with torch.no_grad():
+                w_after = torch.nn.utils.parameters_to_vector(
+                    [p for p in model.parameters() if p.requires_grad]
+                )
+                max_delta = (w_after - w_before).abs().max().item()
+            print(f"[debug] max param delta after step 0: {max_delta:.3e}")
+
+        # (Optional) step scheduler per-batch if it declares that behavior
+        if scheduler is not None and getattr(scheduler, "by_step", False):
+            scheduler.step()
+
+        # Logging
+        running_loss += loss.item()
+        steps += 1
         if step % 10 == 0:
-            wandb.log({"loss_tab": loss})
+            try:
+                import wandb
+                wandb.log({"loss_tab": loss.item(), "epoch": epoch, "step": step})
+            except Exception:
+                pass
+
+    # Per-epoch scheduler step (default)
+    if scheduler is not None and not getattr(scheduler, "by_step", False):
+        try:
+            scheduler.step()
+        except TypeError:
+            # some schedulers require metrics; handle upstream if needed
+            pass
+
+    return running_loss / max(1, steps)
+
 
 def train_epoch_img(args, epoch, model, device, dataloader, optimizer, scheduler, ratio_a, writer=None):
     criterion = nn.CrossEntropyLoss()

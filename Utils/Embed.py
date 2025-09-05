@@ -9,10 +9,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from einops import rearrange, repeat
-from Utils.time2vec import Time2Vec
+from Utils.time2vec import (Time2Vec)
 import numpy as np
-import math
-
 
 
 def Flatten(inp: torch.Tensor) -> torch.Tensor:
@@ -20,26 +18,27 @@ def Flatten(inp: torch.Tensor) -> torch.Tensor:
     out = rearrange(inp, "batch len dy -> batch (dy len) 1")
     return out
 
+
 class Embedding(nn.Module):
     def __init__(
-        self,
-        d_y,
-        d_x,
-        d_model,
-        time_emb_dim=6, ## what is time_emb_dim??
-        method="spatio-temporal",
-        downsample_convs=0,
-        start_token_len=0,
-        null_value=None,
-        pad_value=np.nan,
-        is_encoder: bool = True,
-        position_emb="abs",
-        data_dropout=None,
-        max_seq_len=53,
-        use_val: bool = True,
-        use_time: bool = True,
-        use_space: bool = True,
-        use_given: bool = True,
+            self,
+            d_y,
+            d_x,
+            d_model,
+            time_emb_dim=6,  ## what is time_emb_dim??
+            method="spatio-temporal",
+            downsample_convs=0,
+            start_token_len=0,
+            null_value=None,
+            pad_value=np.nan,
+            is_encoder: bool = True,
+            position_emb="abs",
+            data_dropout=None,
+            max_seq_len=53,
+            use_val: bool = True,
+            use_time: bool = True,
+            use_space: bool = True,
+            use_given: bool = True,
     ):
         super().__init__()
 
@@ -107,29 +106,7 @@ class Embedding(nn.Module):
         # them to the pad value as a form of regularization
         if self.pad_value is None:
             return None
-
-        if torch.is_floating_point(y):
-            pv = torch.as_tensor(self.pad_value, dtype=y.dtype, device=y.device)
-            return (y != pv).any(-1)
-
-        # Integer tensor path
-        # If pad_value is NaN/inf or non-integer, it can't equal any int element → all True
-        if isinstance(self.pad_value, float) and not math.isfinite(self.pad_value):
-            return torch.ones(y.shape[:-1], dtype=torch.bool, device=y.device)
-
-        # Try to make a Python int; if that overflows, it's unrepresentable → all True
-        try:
-            val = int(self.pad_value)
-        except (ValueError, OverflowError):
-            return torch.ones(y.shape[:-1], dtype=torch.bool, device=y.device)
-
-        info = torch.iinfo(y.dtype)
-        if val < info.min or val > info.max:
-            # Unrepresentable in y’s dtype → no element can equal it
-            return torch.ones(y.shape[:-1], dtype=torch.bool, device=y.device)
-
-        pv = torch.tensor(val, dtype=y.dtype, device=y.device)
-        return (y != pv).any(-1)
+        return (y != self.pad_value).any(-1, keepdim=False)
 
     def temporal_embed(self, y: torch.Tensor, x: torch.Tensor):
         bs, length, d_y = y.shape
@@ -146,6 +123,7 @@ class Embedding(nn.Module):
             # optionally mask the context sequence for reconstruction
             y = self.data_drop(y)
         mask = self.make_mask(y)
+        print(f"mask: {mask}")
 
         # position embedding ("local_emb")
         local_pos = torch.arange(length).to(x.device)
@@ -173,7 +151,7 @@ class Embedding(nn.Module):
         # when not using a start token
         given = torch.ones((bs, length)).long().to(x.device)
         if not self.is_encoder and self.use_given:
-            given[:, self.start_token_len :] = 0
+            given[:, self.start_token_len:] = 0
         given_emb = self.given_emb(given)
 
         emb = local_emb + val_time_emb + given_emb
@@ -191,10 +169,10 @@ class Embedding(nn.Module):
     def spatio_temporal_embed(self, y: torch.Tensor, x: torch.Tensor):
         # full spatiotemopral emb method. lots of shape rearrange code
         # here to create artifically long (length x dim) spatiotemporal sequence
-        batch, length, dy = y.shape ##so the y is given back as a nested vector with these dimensions:batch, number of variables and dy=length sequence (bizarre benaming), but what is x? --> dit zijn de timesteps; dagen van het jaar in mijn geval
-        #print(f"batch: {batch}, length: {length}, dy: {dy}")
-        #print(f"x shape: {x.shape}")
-        #print(f"y shape: {y.shape}")
+        batch, length, dy = y.shape  ##so the y is given back as a nested vector with these dimensions:batch, number of variables and dy=length sequence (bizarre benaming), but what is x? --> dit zijn de timesteps; dagen van het jaar in mijn geval
+        # print(f"batch: {batch}, length: {length}, dy: {dy}")
+        # print(f"x shape: {x.shape}")
+        # print(f"y shape: {y.shape}")
         # position emb ("local_emb")
         local_pos = repeat(
             torch.arange(length).to(x.device), f"length -> {batch} ({dy} length)"
@@ -205,21 +183,22 @@ class Embedding(nn.Module):
         if self.position_emb == "t2v":
             # periodic pos emb
             local_emb = self.local_emb(local_pos.float().unsqueeze(-1).float())[
-                :, :, 1:
-            ]
+                        :, :, 1:
+                        ]
             ## let's focus on this case --> local emb is: self.local_emb = stf.Time2Vec(1, embed_dim=d_model + 1)
-            ## torch.unsqueeze adds a new dimension to the last dim so it would go from [batch, length, dy] to [batch, length, dy, 1] 
+            ## torch.unsqueeze adds a new dimension to the last dim so it would go from [batch, length, dy] to [batch, length, dy, 1]
         elif self.position_emb == "abs":
             # lookup pos emb
             local_emb = self.local_emb(local_pos.long())
 
         # time emb
-        if not self.use_time: ##so this is if we would not use the actual timestep values, but for me it might be interesting to actually use them
+        if not self.use_time:  ##so this is if we would not use the actual timestep values, but for me it might be interesting to actually use them
             x = torch.zeros_like(x)
         x = torch.nan_to_num(x)
-        x = repeat(x, f"batch len x_dim -> batch ({dy} len) x_dim") #
-        #print(f"x shape before time emb: {x.shape}")
-        time_emb = self.time_emb(x.type(torch.float32)) #Here the time embedding is used --> this is in any case time2vec
+        x = repeat(x, f"batch len x_dim -> batch ({dy} len) x_dim")  #
+        # print(f"x shape before time emb: {x.shape}")
+        time_emb = self.time_emb(
+            x.type(torch.float32))  # Here the time embedding is used --> this is in any case time2vec
 
         # protect against NaNs in y, but keep track for Given emb
         true_null = torch.isnan(y)
@@ -232,18 +211,20 @@ class Embedding(nn.Module):
         y_original = Flatten(y_original)
         y = self.data_drop(y)
         y = Flatten(y)
-        mask = self.make_mask(y).long() ## why a mask? what does this do? maybe deal with bad values? --> a mask will deal with sequences of variable length; padding in transformers refers to a value used to fill up a sequence so every vector in the batch is the same length, the attention scores of these pad values are masked as to not influence the outcome
+        mask = self.make_mask(
+            y).long()  ## why a mask? what does this doe? maybe deal with bad values? --> a mask will deal with sequences of variable length; padding in transformers refers to a value used to fill up a sequence so every vector in the batch is the same length, the attention scores of these pad values are masked as to not influence the outcome
 
         # concat time_emb, y --> FF --> val_time_emb
-        val_time_inp = torch.cat((time_emb, y), dim=-1) 
-        val_time_emb = self.val_time_emb(val_time_inp.type(torch.float32)) ## Dit is gewoon een lineaire laag die omzet naar de dim van het model; maar waarom is dit nodig? --> lijkt om de combinatie de time en value om te zetten naar iets bruikbaar; anders wordt de time embedding ook gewoon niet gebruikt
+        val_time_inp = torch.cat((time_emb, y), dim=-1)
+        val_time_emb = self.val_time_emb(val_time_inp.type(
+            torch.float32))  ## Dit is gewoon een lineaire laag die omzet naar de dim van het model; maar waarom is dit nodig? --> lijkt om de combinatie de time en value om te zetten naar iets bruikbaar; anders wordt de time embedding ook gewoon niet gebruikt
 
         # "given" embedding
         if self.use_given:
             given = torch.ones((batch, length, dy)).long().to(x.device)  # start as True
             if not self.is_encoder:
                 # mask missing values that need prediction...
-                given[:, self.start_token_len :, :] = 0  # (False)
+                given[:, self.start_token_len:, :] = 0  # (False)
 
             # if y was NaN, set Given = False
             given *= ~true_null
@@ -261,13 +242,12 @@ class Embedding(nn.Module):
 
             given_emb = self.given_emb(given)
         else:
-            given_emb = 0.0 ## given embedding will not be used in my case
+            given_emb = 0.0  ## given embedding will not be used in my case
 
-        #print(f"A final overview of all the shapes: local_emb: {local_emb.shape}, val_time_emb: {val_time_emb.shape}")
-        val_time_emb = local_emb + val_time_emb + given_emb ## local embed is the variable embedding i think but very confusing, why not just name it as such
-        
+        # print(f"A final overview of all the shapes: local_emb: {local_emb.shape}, val_time_emb: {val_time_emb.shape}")
+        val_time_emb = local_emb + val_time_emb + given_emb  ## local embed is the variable embedding i think but very confusing, why not just name it as such
+
         ## Almost there but the only thing that really confuses me now is how all of a sudden the val_time_emb will be the right length
-        
 
         if self.is_encoder:
             for conv in self.downsize_convs:
@@ -285,14 +265,14 @@ class Embedding(nn.Module):
         space_emb = self.space_emb(var_idx)
 
         return val_time_emb, space_emb, var_idx_true, mask
-    
+
     def spatiosat_temporal_embed(self, y: torch.Tensor, x: torch.Tensor):
         # full spatiotemopral emb method. lots of shape rearrange code
         # here to create artifically long (length x dim) spatiotemporal sequence
-        batch, length, dy = y.shape ##so the y is given back as a nested vector with these dimensions:batch, number of variables and dy=length sequence (bizarre benaming), but what is x? --> dit zijn de timesteps; dagen van het jaar in mijn geval
-        #print(f"batch: {batch}, length: {length}, dy: {dy}")
-        #print(f"x shape: {x.shape}")
-        #print(f"y shape: {y.shape}")
+        batch, length, dy = y.shape  ##so the y is given back as a nested vector with these dimensions:batch, number of variables and dy=length sequence (bizarre benaming), but what is x? --> dit zijn de timesteps; dagen van het jaar in mijn geval
+        # print(f"batch: {batch}, length: {length}, dy: {dy}")
+        # print(f"x shape: {x.shape}")
+        # print(f"y shape: {y.shape}")
         # position emb ("local_emb")
         local_pos = repeat(
             torch.arange(length).to(x.device), f"length -> {batch} ({dy} length)"
@@ -303,74 +283,76 @@ class Embedding(nn.Module):
         if self.position_emb == "t2v":
             # periodic pos emb
             local_emb = self.local_emb(local_pos.float().unsqueeze(-1).float())[
-                :, :, 1:
-            ]
+                        :, :, 1:
+                        ]
             ## let's focus on this case --> local emb is: self.local_emb = stf.Time2Vec(1, embed_dim=d_model + 1)
-            ## torch.unsqueeze adds a new dimension to the last dim so it would go from [batch, length, dy] to [batch, length, dy, 1] 
+            ## torch.unsqueeze adds a new dimension to the last dim so it would go from [batch, length, dy] to [batch, length, dy, 1]
         elif self.position_emb == "abs":
             # lookup pos emb
             local_emb = self.local_emb(local_pos.long())
-        
+
         # time emb
-        if not self.use_time: ##so this is if we would not use the actual timestep values, but for me it might be interesting to actually use them
+        if not self.use_time:  ##so this is if we would not use the actual timestep values, but for me it might be interesting to actually use them
             x = torch.zeros_like(x)
         x = torch.nan_to_num(x)
-        x = repeat(x, f"batch len x_dim -> batch ({dy} len) x_dim") #deze lijn maakt gewoon echt geen sense
-        time_emb = self.time_emb(x.type(torch.float32)) #Here the time embedding is used --> this is in any case time2vec
-        
+        x = repeat(x, f"batch len x_dim -> batch ({dy} len) x_dim")  # deze lijn maakt gewoon echt geen sense
+        time_emb = self.time_emb(
+            x.type(torch.float32))  # Here the time embedding is used --> this is in any case time2vec
+
         # protect against NaNs in y, but keep track for Given emb
         true_null = torch.isnan(y)
         y = torch.nan_to_num(y)
         if not self.use_val:
             y = torch.zeros_like(y)
-        
+
         # keep track of pre-dropout y for given emb
         y_original = y.clone()
         y_original = Flatten(y_original)
         y = self.data_drop(y)
         y = Flatten(y)
-        mask = self.make_mask(y).long() ## why a mask? what does this doe? maybe deal with bad values? --> a mask will deal with sequences of variable length; padding in transformers refers to a value used to fill up a sequence so every vector in the batch is the same length, the attention scores of these pad values are masked as to not influence the outcome
-        
+        mask = self.make_mask(
+            y).long()  ## why a mask? what does this doe? maybe deal with bad values? --> a mask will deal with sequences of variable length; padding in transformers refers to a value used to fill up a sequence so every vector in the batch is the same length, the attention scores of these pad values are masked as to not influence the outcome
+
         # concat time_emb, y --> FF --> val_time_emb
-        val_time_inp = torch.cat((time_emb, y), dim=-1) 
-        val_time_emb = self.val_time_emb(val_time_inp.type(torch.float32)) ## Dit is gewoon een lineaire laag die omzet naar de dim van het model; maar waarom is dit nodig? --> lijkt om de combinatie de time en value om te zetten naar iets bruikbaar; anders wordt de time embedding ook gewoon niet gebruikt
-        
+        val_time_inp = torch.cat((time_emb, y), dim=-1)
+        val_time_emb = self.val_time_emb(val_time_inp.type(
+            torch.float32))  ## Dit is gewoon een lineaire laag die omzet naar de dim van het model; maar waarom is dit nodig? --> lijkt om de combinatie de time en value om te zetten naar iets bruikbaar; anders wordt de time embedding ook gewoon niet gebruikt
+
         # "given" embedding
         if self.use_given:
             given = torch.ones((batch, length, dy)).long().to(x.device)  # start as True
             if not self.is_encoder:
                 # mask missing values that need prediction...
-                given[:, self.start_token_len :, :] = 0  # (False)
-        
+                given[:, self.start_token_len:, :] = 0  # (False)
+
             # if y was NaN, set Given = False
             given *= ~true_null
-        
+
             # flatten now to make the rest easier to figure out
             given = rearrange(given, "batch len dy -> batch (dy len)")
-        
+
             # use given embeddings to identify data that was dropped out
             given *= (y == y_original).squeeze(-1)
-        
+
             if self.null_value is not None:
                 # mask null values that were set to a magic number in the dataset itself
                 null_mask = (y != self.null_value).squeeze(-1)
                 given *= null_mask
-        
+
             given_emb = self.given_emb(given)
         else:
-            given_emb = 0.0 ## given embedding will not be used in my case
-        
-        #print(f"A final overview of all the shapes: local_emb: {local_emb.shape}, val_time_emb: {val_time_emb.shape}")
-        val_time_emb = local_emb + val_time_emb + given_emb ## local embed is the variable embedding i think but very confusing, why not just name it as such
-        
+            given_emb = 0.0  ## given embedding will not be used in my case
+
+        # print(f"A final overview of all the shapes: local_emb: {local_emb.shape}, val_time_emb: {val_time_emb.shape}")
+        val_time_emb = local_emb + val_time_emb + given_emb  ## local embed is the variable embedding i think but very confusing, why not just name it as such
+
         ## Almost there but the only thing that really confuses me now is how all of a sudden the val_time_emb will be the right length
-        
-        
+
         if self.is_encoder:
             for conv in self.downsize_convs:
                 val_time_emb = conv(val_time_emb)
                 length //= 2
-        
+
         # space embedding
         ## what is a space embedding
         var_idx = repeat(
@@ -380,5 +362,5 @@ class Embedding(nn.Module):
         if not self.use_space:
             var_idx = torch.zeros_like(var_idx)
         space_emb = self.space_emb(var_idx)
-        
+
         return val_time_emb, space_emb, var_idx_true, mask

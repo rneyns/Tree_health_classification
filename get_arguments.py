@@ -45,7 +45,7 @@ def get_arguments():
     parser.add_argument('--fps', default=1, type=int, help='Extract how many frames in a second')
     parser.add_argument('--num_frame', default=3, type=int, help='use how many frames for train')
 
-    parser.add_argument('--batch_size', default=32, type=int)
+    parser.add_argument('--batch_size', default=64, type=int)
     parser.add_argument('--epochs', default=150, type=int)
     parser.add_argument('--embed_dim', default=512, type=int)
     parser.add_argument('--optimizer', default='SGD', type=str)

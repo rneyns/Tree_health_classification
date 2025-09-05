@@ -22,20 +22,19 @@ import numpy as np
 def initialize_model(args, device, cat_dims, con_idxs):
     print("---------length of the continous index array is: ", len(con_idxs), "---------")
     model_tab = SAINT(
-        categories=tuple(cat_dims),
-        num_continuous=len(con_idxs),
-        bands=4, #specify the number of bands for each date
-        dim=args.embedding_size,
-        dim_out=1,
-        depth=args.transformer_depth,
-        heads=args.attention_heads,
-        attn_dropout=args.attention_dropout,
-        ff_dropout=args.ff_dropout,
-        mlp_hidden_mults=(4, 2),
-        cont_embeddings=args.cont_embeddings,
-        attentiontype=args.attentiontype,
-        final_mlp_style=args.final_mlp_style,
-        y_dim=args.numClasses,
+    categories = tuple(cat_dims),
+    num_continuous = args.timeSteps*4,
+    dim = args.embedding_size,
+    dim_out = 1,
+    depth = args.transformer_depth,
+    heads = args.attention_heads,
+    attn_dropout = args.attention_dropout,
+    ff_dropout = args.ff_dropout,
+    mlp_hidden_mults = (4, 2),
+    cont_embeddings = args.cont_embeddings,
+    attentiontype = args.attentiontype,
+    final_mlp_style = args.final_mlp_style,
+    y_dim = args.numClasses
     )
     model_tab.to(device)
     model = MM_model(model_tab, BasicBlock, [2, 2, 2, 2], num_classes=args.numClasses, n_dates=args.timeSteps,
