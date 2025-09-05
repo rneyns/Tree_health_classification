@@ -97,7 +97,7 @@ if __name__ == "__main__":
 
     optimizer = optim.AdamW(
         [
-            {"params": other_params, "lr": 1e-3},
+            {"params": other_params, "lr": 1e-4},
             {"params": img_params, "lr": 1e-6},
         ],
         weight_decay=1e-2  # (set if you want)

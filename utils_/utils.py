@@ -160,6 +160,8 @@ def class_wise_acc_(model, dloader, device):
                 device).type(torch.float32), data[3].to(device).type(torch.float32), data[4].type(torch.float32).to(
                 device),data[5].to(device, dtype=torch.long)#,data[6].to(device).type(torch.float32)
 
+            _, x_categ_enc, x_cont_enc, con_mask = embed_data_mask(x_categ, x_cont, model.tab_net, False, DOY=DOY)
+
             a, v, out = model(image, x_categ_enc, x_cont_enc, con_mask)
             # import ipdb; ipdb.set_trace()
             y_test = torch.cat([y_test, y_gts], dim=0)
@@ -191,6 +193,8 @@ def classification_scores(model, dloader, device, task, vision_dset):
             image, ids, DOY, x_categ, x_cont, y_gts = data[0].to(device), data[1].to(device).type(torch.float32), data[2].to(
                 device).type(torch.float32), data[3].to(device).type(torch.float32), data[4].type(torch.float32).to(
                 device) ,data[5].to(device, dtype=torch.long)#,data[6].to(device).type(torch.float32)
+
+            _, x_categ_enc, x_cont_enc, con_mask = embed_data_mask(x_categ, x_cont, model.tab_net, False, DOY=DOY)
             a, v, out = model(image, x_categ_enc, x_cont_enc, con_mask)
             # import ipdb; ipdb.set_trace()
             y_test = torch.cat([y_test, y_gts], dim=0)
