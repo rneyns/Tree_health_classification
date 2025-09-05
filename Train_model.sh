@@ -4,7 +4,7 @@
 
 #SBATCH --gpus-per-node=1
 
-#SBATCH --mem=20gb
+#SBATCH --mem=40gb
 
 #SBATCH --time=6:00:00
 
