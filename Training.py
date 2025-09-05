@@ -167,9 +167,6 @@ def train_epoch(args, epoch, model, device, dataloader, optimizer, scheduler, ra
         if step % 10 == 0:
             wandb.log({"loss": loss, "loss_img": loss_a, "loss_tab": loss_v})
 
-    if args.optimizer == 'SGD':
-        scheduler.step()
-
     return _loss / len(dataloader), _loss_a / len(dataloader), _loss_v / len(dataloader), _a_angle / len(dataloader), \
            _v_angle / len(dataloader), _ratio_a / len(dataloader)
 
