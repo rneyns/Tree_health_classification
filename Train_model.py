@@ -29,7 +29,7 @@ if __name__ == "__main__":
 
     from get_arguments import get_arguments
     from Dataloader_init import dataloader_init
-    from Training import train_epoch, train_epoch_tab
+    from Training import train_epoch, train_epoch_tab, train_epoch_img
     from Utils import valid
     from Model import initialize_model
     from models import SAINT
@@ -46,21 +46,24 @@ if __name__ == "__main__":
     device = torch.device("mps")
     print("Using device: ", device)
 
+    # 1) Load the data
     trainloader, validloader, testloader, cat_dims, con_idxs, y_dim, DOY, w0_norm, w1_norm, args = dataloader_init(args)
 
-    # Initialize the models
+    # 2) Initialize the model
     model = initialize_model(args, device, cat_dims, con_idxs)
 
-    # Load the pretrained ResNet18 weights
+    # 3) Get pretrained resnet18
     weights = models.ResNet18_Weights.DEFAULT
-    pretrained_resnet = models.resnet18(weights=weights)
-    pretrained_dict = pretrained_resnet.state_dict()
-    model_dict = model.state_dict()
+    resnet18_pre = models.resnet18(weights=weights)
 
-    from collections import OrderedDict
+    # 4) Load into YOUR model (adjust ".backbone" to your attribute name or remove it if not wrapped)
+    load_target = getattr(model, "img_net", model)  # falls back to model if no .backbone
+    state = resnet18_pre.state_dict()
 
-    prefixed = OrderedDict((f"img_net.{k}", v) for k, v in pretrained_resnet.state_dict().items())
-    missing, unexpected = model.load_state_dict(prefixed, strict=False)
+    # 5) Actually load and see what happened
+    load_info = load_target.load_state_dict(state, strict=False)
+    print("Missing keys:", load_info.missing_keys)
+    print("Unexpected keys:", load_info.unexpected_keys)
 
     vision_dset =  False
     print(y_dim)
@@ -87,7 +90,19 @@ if __name__ == "__main__":
         }
     )
 
-    optimizer = optim.AdamW(model.parameters(), lr=0.0001)
+    # Separate image branch and rest of model
+    img_params = list(model.img_net.parameters())  # adjust if your attribute is different
+    other_params = [p for n, p in model.named_parameters()
+                    if not n.startswith("img_net.")]
+
+    optimizer = optim.AdamW(
+        [
+            {"params": other_params, "lr": 1e-3},
+            {"params": img_params, "lr": 1e-6},
+        ],
+        weight_decay=1e-2  # (set if you want)
+    )
+
     scheduler = None
 
     print("param_groups:", [len(g["params"]) for g in optimizer.param_groups])
@@ -108,19 +123,19 @@ if __name__ == "__main__":
 
                 model.train()
 
-                train_epoch_tab(args, epoch, model.tab_net, device, trainloader, optimizer, scheduler, ratio_a=None)
+                train_epoch(args, epoch, model, device, trainloader, optimizer, scheduler, ratio_a=None)
 
                 model.eval()
                 with torch.no_grad():
-                    accuracy, auroc, kappa = classification_scores(model.tab_net, validloader, device, args.task,
+                    accuracy, accuracy_img,  accuracy_tab, kappa = classification_scores(model, validloader, device, args.task,
                                                                    False)
-                    test_accuracy, test_auroc, test_kappa = classification_scores(model.tab_net, testloader, device,
+                    test_accuracy, test_accuracy_img, test_accuracy_tab, test_kappa = classification_scores(model, testloader, device,
                                                                                   args.task, False)
-                    acc_classwise, conf_matrix = class_wise_acc_(model.tab_net, validloader, device)
-                    print('[EPOCH %d] VALID ACCURACY: %.3f, VALID AUROC: %.3f, VALID KAPPA: %.3f' %
-                          (epoch + 1, accuracy, auroc, kappa))
-                    print('[EPOCH %d] TEST ACCURACY: %.3f, TEST AUROC: %.3f, TEST KAPPA: %.3f' %
-                          (epoch + 1, test_accuracy, test_auroc, test_kappa))
+                    acc_classwise, acc_classwise_tab, acc_classwise_img, conf_matrix = class_wise_acc_(model, validloader, device)
+                    print('[EPOCH %d] VALID ACCURACY: %.3f, VALID IMG: %.3f, VALID TAB: %.3f, VALID KAPPA: %.3f' %
+                          (epoch + 1, accuracy, accuracy_img, accuracy_tab, kappa))
+                    print('[EPOCH %d] TEST ACCURACY: %.3f, TEST IMG: %.3f, TEST TAB: %.3f, TEST KAPPA: %.3f' %
+                          (epoch + 1, test_accuracy, test_accuracy_img, test_accuracy_tab, test_kappa))
                     print(f"class_wise_accuracies: {acc_classwise}")
                     print(f"confusion matrix: {conf_matrix}")
                     wandb.log({"acc_tab": accuracy, "accuracy_extra_test": accuracy, 'auroc': auroc, "epoch": epoch})

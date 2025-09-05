@@ -60,10 +60,20 @@ def train_epoch(args, epoch, model, device, dataloader, optimizer, scheduler, ra
     _v_diff = 0
     _ratio_a = 0
 
-    for step, data in enumerate(dataloader):
+    for step, batch in enumerate(dataloader):
+        # Unpack
+        image, ids, DOY, x_categ, x_cont, y_gts = batch
+
+        # Move + cast
+        image = image.to(device, non_blocking=True).float()
+        DOY     = DOY.to(device, non_blocking=True).float()
+        x_categ = x_categ.to(device, non_blocking=True).float()
+        x_cont  = x_cont.to(device, non_blocking=True).float()
+        label  = y_gts.to(device, non_blocking=True).long().view(-1)  # CE expects [N] Long
+
+        optimizer.zero_grad(set_to_none=True)
         # Forward pass
-        optimizer.zero_grad()
-        image, x_categ_enc, x_cont_enc, con_mask, label = prepare_data_embedding(data, args, model, device)
+        _, x_categ_enc, x_cont_enc, con_mask = embed_data_mask(x_categ, x_cont, model.tab_net, False, DOY=DOY)
 
         a, v, out = model(image, x_categ_enc, x_cont_enc, con_mask)
 
@@ -294,7 +304,7 @@ def train_epoch_img(args, epoch, model, device, dataloader, optimizer, scheduler
     tanh = nn.Tanh()
 
     model.train()
-    print("Start training tab transformer ... ")
+    print("Start training ResNet ... ")
 
     for step, data in enumerate(dataloader):
         # Forward pass
@@ -305,7 +315,7 @@ def train_epoch_img(args, epoch, model, device, dataloader, optimizer, scheduler
             device),data[5].to(device, dtype=torch.long)#,data[6].to(device).type(torch.float32)
         # We are converting the data to embeddings in the next step
 
-        y_outs = model.img_net(image)
+        y_outs = model(image)
 
         loss = criterion(y_outs, y_gts.squeeze())
         loss.backward()

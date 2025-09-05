@@ -151,28 +151,33 @@ def class_wise_acc_(model, dloader, device):
     vision_dset = False
     y_test = torch.empty(0).to(device)
     y_pred = torch.empty(0).to(device)
+    y_pred_img = torch.empty(0).to(device)
+    y_pred_tab = torch.empty(0).to(device)
 
     with torch.no_grad():
         for i, data in enumerate(dloader, 0):
             image, ids, DOY, x_categ, x_cont, y_gts = data[0].to(device), data[1].to(device).type(torch.float32), data[2].to(
                 device).type(torch.float32), data[3].to(device).type(torch.float32), data[4].type(torch.float32).to(
                 device),data[5].to(device, dtype=torch.long)#,data[6].to(device).type(torch.float32)
-            _, x_categ_enc, x_cont_enc, con_mask = embed_data_mask(x_categ, x_cont, model, vision_dset, DOY=DOY)
-            reps = model.transformer(x_categ_enc, x_cont_enc, con_mask)
-            y_reps = reps[:, 0, :]
-            y_outs = model.mlpfory(y_reps)
+
+            a, v, out = model(image, x_categ_enc, x_cont_enc, con_mask)
             # import ipdb; ipdb.set_trace()
             y_test = torch.cat([y_test, y_gts], dim=0)
-            y_pred = torch.cat([y_pred, y_outs], dim=0)
+            y_pred = torch.cat([y_pred, torch.argmax(out, dim=1).float()], dim=0)
+            y_pred_img = torch.cat([y_pred_img, torch.argmax(a, dim=1).float()], dim=0)
+            y_pred_tab = torch.cat([y_pred_tab, torch.argmax(v, dim=1).float()], dim=0)
 
     acc_classwise, total_correct, total_val_batch = class_wise_acc(y_pred, y_test, num_classes=5)
+    acc_classwise_img, total_correct_img, total_val_batch_img = class_wise_acc(y_pred_img, y_test, num_classes=5)
+    acc_classwise_tab, total_correct_tab, total_val_batch_tab = class_wise_acc(y_pred_tab, y_test, num_classes=5)
+
 
     # Compute the confusion matrix
     y_pred_softmax = torch.log_softmax(y_pred, dim=1)
     _, y_pred_tags = torch.max(y_pred_softmax, dim=1)
     conf_matrix = confusion_matrix(y_test.cpu().numpy(),
                                    y_pred_tags.cpu().numpy())
-    return acc_classwise, conf_matrix
+    return acc_classwise, acc_classwise_tab, acc_classwise_img, conf_matrix
 
 
 def classification_scores(model, dloader, device, task, vision_dset):
@@ -186,23 +191,29 @@ def classification_scores(model, dloader, device, task, vision_dset):
             image, ids, DOY, x_categ, x_cont, y_gts = data[0].to(device), data[1].to(device).type(torch.float32), data[2].to(
                 device).type(torch.float32), data[3].to(device).type(torch.float32), data[4].type(torch.float32).to(
                 device) ,data[5].to(device, dtype=torch.long)#,data[6].to(device).type(torch.float32)
-            _, x_categ_enc, x_cont_enc, con_mask = embed_data_mask(x_categ, x_cont, model, vision_dset, DOY=DOY)
-            reps = model.transformer(x_categ_enc, x_cont_enc, con_mask)
-            y_reps = reps[:, 0, :]
-            y_outs = model.mlpfory(y_reps)
+            a, v, out = model(image, x_categ_enc, x_cont_enc, con_mask)
             # import ipdb; ipdb.set_trace()
-            y_test = torch.cat([y_test, y_gts.squeeze().float()], dim=0)
-            y_pred = torch.cat([y_pred, torch.argmax(y_outs, dim=1).float()], dim=0)
+            y_test = torch.cat([y_test, y_gts], dim=0)
+            y_pred = torch.cat([y_pred, torch.argmax(out, dim=1).float()], dim=0)
+            y_pred_img = torch.cat([y_pred_img, torch.argmax(a, dim=1).float()], dim=0)
+            y_pred_tab = torch.cat([y_pred_tab, torch.argmax(v, dim=1).float()], dim=0)
+
             if task == 'binary':
                 prob = torch.cat([prob, m(y_outs)[:, -1].float()], dim=0)
 
     correct_results_sum = (y_pred == y_test).sum().float()
+    correct_results_sum_img = (y_pred_img == y_test).sum().float()
+    correct_results_sum_tab = (y_pred_tab == y_test).sum().float()
+
     acc = correct_results_sum / y_test.shape[0] * 100
+    acc_img = correct_results_sum_img / y_test.shape[0] * 100
+    acc_tab = correct_results_sum_img / y_test.shape[0] * 100
+
     kappa = sklearn.metrics.cohen_kappa_score(np.array(y_pred.cpu()), np.array(y_test.cpu()))
     auc = 0
     if task == 'binary':
         auc = roc_auc_score(y_score=prob.cpu(), y_true=y_test.cpu())
-    return acc.cpu().numpy(), auc, kappa
+    return acc.cpu().numpy(), acc_img.cpu().numpy(), acc_tab.cpu().numpy(), kappa
 
 
 def mean_sq_error(model, dloader, device, vision_dset):
