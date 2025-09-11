@@ -67,19 +67,29 @@ if __name__ == "__main__":
     resnet18_pre = models.resnet18(weights=weights)
 
     # 4) Load into YOUR model (adjust ".backbone" to your attribute name or remove it if not wrapped)
-    load_target = getattr(model, "img_net", model)  # falls back to model if no .backbone
     state = resnet18_pre.state_dict()
-
-    # 5) Actually load and see what happened
+    core = getattr(model, "module", model)  # unwrap DDP/DataParallel if present
+    load_target = getattr(core, "img_net", core)  # your attribute
+    # If load_target is still a wrapper holding the real resnet in .backbone:
+    if hasattr(load_target, "backbone"):
+        load_target = load_target.backbone  # <-- descend to the real resnet
     load_info = load_target.load_state_dict(state, strict=False)
-    print("Missing keys:", load_info.missing_keys)
-    print("Unexpected keys:", load_info.unexpected_keys)
+    print("Missing:", load_info.missing_keys[:10])
+    print("Unexpected:", load_info.unexpected_keys[:10])
 
     vision_dset =  False
     print(y_dim)
     print(args.task)
 
     model.to(device)
+
+    print(type(model))
+    print(hasattr(model, "module"), hasattr(model, "img_net"))
+
+    w_pre = state["layer1.0.conv1.weight"].flatten()[:5]
+    w_now = model.img_net.state_dict()["layer1.0.conv1.weight"].flatten()[:5]
+    print("Pretrained sample:", w_pre)
+    print("Model sample:", w_now)
 
     wandb.login(key='f746dc65fb72b570908ed1dd5b2b780d7e438243')
     wandb.init(
@@ -121,6 +131,17 @@ if __name__ == "__main__":
     in_opt = sum(p.numel() for g in optimizer.param_groups for p in g["params"])
     print("trainable tensors:", trainable, "  params in opt groups:", in_opt)
 
+    #Freeze the backbone weights to perform sanity check
+    # 1) Freeze backbone
+    for n, p in model.img_net.named_parameters():
+        if n.startswith(("conv0", "fc")):
+            p.requires_grad = False
+        else:
+            p.requires_grad = True
+
+    # Check
+    print("Any trainable params:", any(p.requires_grad for p in model.img_net.parameters()))
+
     if args.train:
 
         best_acc = 0.0
@@ -133,7 +154,13 @@ if __name__ == "__main__":
 
                 model.train()
 
-                train_epoch(args, epoch, model, device, trainloader, optimizer, scheduler, ratio_a=None)
+                if epoch == 1:
+                    # 3) Unfreeze backbone after 4 epochs
+                    for p in load_target.parameters():
+                        p.requires_grad = True
+                    print("Backbone unfrozen!")
+
+                train_epoch_img(args, epoch, model.img_net, device, trainloader, optimizer, scheduler, ratio_a=None)
 
                 model.eval()
                 with torch.no_grad():

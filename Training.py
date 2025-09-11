@@ -320,6 +320,6 @@ def train_epoch_img(args, epoch, model, device, dataloader, optimizer, scheduler
         # print(running_loss)
 
         if step % 10 == 0:
-            wandb.log({"loss_tab": loss})
+            wandb.log({"loss_img": loss})
 
 
