@@ -187,7 +187,10 @@ def classification_scores(model, dloader, device, task, vision_dset):
     m = nn.Softmax(dim=1)
     y_test = torch.empty(0).to(device)
     y_pred = torch.empty(0).to(device)
+    y_pred_tab = torch.empty(0).to(device)
+    y_pred_img = torch.empty(0).to(device)
     prob = torch.empty(0).to(device)
+
     with torch.no_grad():
         for i, data in enumerate(dloader, 0):
             image, ids, DOY, x_categ, x_cont, y_gts = data[0].to(device), data[1].to(device).type(torch.float32), data[2].to(
