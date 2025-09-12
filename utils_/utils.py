@@ -165,9 +165,9 @@ def class_wise_acc_(model, dloader, device):
             a, v, out = model(image, x_categ_enc, x_cont_enc, con_mask)
             # import ipdb; ipdb.set_trace()
             y_test = torch.cat([y_test, y_gts], dim=0)
-            y_pred = torch.cat([y_pred, torch.argmax(out, dim=1).float()], dim=0)
-            y_pred_img = torch.cat([y_pred_img, torch.argmax(a, dim=1).float()], dim=0)
-            y_pred_tab = torch.cat([y_pred_tab, torch.argmax(v, dim=1).float()], dim=0)
+            y_pred = torch.cat([y_pred, out], dim=0)
+            y_pred_img = torch.cat([y_pred_img, a], dim=0)
+            y_pred_tab = torch.cat([y_pred_tab, v], dim=0)
 
     acc_classwise, total_correct, total_val_batch = class_wise_acc(y_pred, y_test, num_classes=5)
     acc_classwise_img, total_correct_img, total_val_batch_img = class_wise_acc(y_pred_img, y_test, num_classes=5)
