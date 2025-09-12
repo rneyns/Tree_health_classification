@@ -117,7 +117,7 @@ def dataloader_init(args):
     if nfeat > 100:
         args.embedding_size = min(4, args.embedding_size)
         # The batch size needs to be at least  to make optimal use of the intersample attention
-        args.batchsize = min(64, args.batchsize)
+        args.batchsize = min(32, args.batchsize)
     if args.attentiontype != 'col':
         args.transformer_depth = 1
         args.attention_heads = 4
