@@ -175,7 +175,7 @@ if __name__ == "__main__":
                           (epoch + 1, test_accuracy, test_accuracy_img, test_accuracy_tab, test_kappa))
                     print(f"class_wise_accuracies: {acc_classwise}")
                     print(f"confusion matrix: {conf_matrix}")
-                    wandb.log({"acc_tab": accuracy, "accuracy_extra_test": accuracy, 'auroc': auroc, "epoch": epoch})
+                    wandb.log({"accuracy_img": accuracy_img, "accuracy_tab": accuracy_tab, "epoch": epoch})
                 #acc, acc_a, acc_v = valid(args, model, device, validloader)
 
 
