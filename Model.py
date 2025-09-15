@@ -23,7 +23,7 @@ def initialize_model(args, device, cat_dims, con_idxs):
     print("---------length of the continous index array is: ", len(con_idxs), "---------")
     model_tab = SAINT(
     categories = tuple(cat_dims),
-    num_continuous = args.timeSteps*4,
+    num_continuous = args.timeSteps*8,
     dim = args.embedding_size,
     dim_out = 1,
     depth = args.transformer_depth,

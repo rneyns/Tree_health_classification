@@ -1,7 +1,7 @@
 """
 Script: PlanetScope Tree Reflectance Sampler
 Author: Robbe Neyns (with help from genAI)
-Date: [Today]
+Date: 01/10/2025
 Description:
     This script samples reflectance values from PlanetScope images for a set of tree points.
     - One CSV is generated per band (band_1.csv, band_2.csv, etc.).
