@@ -156,62 +156,49 @@ if __name__ == "__main__":
 
         for epoch in range(args.epochs):
 
-            if epoch < 50:
 
-                model.train()
+            model.train()
 
-                if epoch == 1:
-                    # 3) Unfreeze backbone after 4 epochs
-                    for p in load_target.parameters():
-                        p.requires_grad = True
-                    print("Backbone unfrozen!")
+            if epoch == 1:
+                # 3) Unfreeze backbone after 4 epochs
+                for p in load_target.parameters():
+                    p.requires_grad = True
+                print("Backbone unfrozen!")
 
-                train_epoch(args, epoch, model, device, trainloader, optimizer, scheduler, ratio_a=None)
+            train_epoch(args, epoch, model, device, trainloader, optimizer, scheduler, ratio_a=None)
 
-                model.eval()
-                with torch.no_grad():
-                    accuracy, accuracy_img,  accuracy_tab, kappa = classification_scores(model, validloader, device, args.task,
-                                                                   False)
-                    test_accuracy, test_accuracy_img, test_accuracy_tab, test_kappa = classification_scores(model, testloader, device,
-                                                                                  args.task, False)
-                    acc_classwise, acc_classwise_tab, acc_classwise_img, conf_matrix = class_wise_acc_(model, validloader, device)
-                    print('[EPOCH %d] VALID ACCURACY: %.3f, VALID IMG: %.3f, VALID TAB: %.3f, VALID KAPPA: %.3f' %
-                          (epoch + 1, accuracy, accuracy_img, accuracy_tab, kappa))
-                    print('[EPOCH %d] TEST ACCURACY: %.3f, TEST IMG: %.3f, TEST TAB: %.3f, TEST KAPPA: %.3f' %
-                          (epoch + 1, test_accuracy, test_accuracy_img, test_accuracy_tab, test_kappa))
-                    print(f"class_wise_accuracies: {acc_classwise}")
-                    print(f"confusion matrix: {conf_matrix}")
-                    wandb.log({"accuracy_img": accuracy_img, "accuracy_tab": accuracy_tab, "epoch": epoch})
-                #acc, acc_a, acc_v = valid(args, model, device, validloader)
-
-
-                print('Epoch: {}: '.format(epoch))
+            model.eval()
+            with torch.no_grad():
+                accuracy, accuracy_img,  accuracy_tab, kappa = classification_scores(model, validloader, device, args.task,
+                                                               False)
+                test_accuracy, test_accuracy_img, test_accuracy_tab, test_kappa = classification_scores(model, testloader, device,
+                                                                              args.task, False)
+                acc_classwise, acc_classwise_tab, acc_classwise_img, conf_matrix = class_wise_acc_(model, validloader, device)
+                print('[EPOCH %d] VALID ACCURACY: %.3f, VALID IMG: %.3f, VALID TAB: %.3f, VALID KAPPA: %.3f' %
+                      (epoch + 1, accuracy, accuracy_img, accuracy_tab, kappa))
+                print('[EPOCH %d] TEST ACCURACY: %.3f, TEST IMG: %.3f, TEST TAB: %.3f, TEST KAPPA: %.3f' %
+                      (epoch + 1, test_accuracy, test_accuracy_img, test_accuracy_tab, test_kappa))
+                print(f"class_wise_accuracies: {acc_classwise}")
+                print(f"confusion matrix: {conf_matrix}")
+                wandb.log({"accuracy_img": accuracy_img, "accuracy_tab": accuracy_tab, "epoch": epoch})
+            #acc, acc_a, acc_v = valid(args, model, device, validloader)
 
 
-            else:
+            print('Epoch: {}: '.format(epoch))
 
-                batch_loss, batch_loss_a, batch_loss_v, a_angle, v_angle, ratio_a = train_epoch(args, epoch, model, device,
-                                                                                                trainloader, optimizer,
-                                                                                                scheduler, ratio_a)
 
-                acc, acc_a, acc_v = valid(args, model, device, validloader)
 
-                #wandb.log({"Accuracy": acc, "acc_img": acc_a, "acc_tab": acc_v, "epoch": epoch})
 
-                print('epoch: ', epoch, 'loss: ', batch_loss, batch_loss_a, batch_loss_v)
-                print('epoch: ', epoch, 'acc: ', acc, 'acc_a: ', acc_a, 'acc_v: ', acc_v)
-                print('epoch: ', epoch, 'a_angle: ', a_angle, 'v_angle: ', v_angle)
-
+            if acc > best_acc:
                 if acc > best_acc:
-                    if acc > best_acc:
-                        best_acc = float(acc)
+                    best_acc = float(acc)
 
-                    print('Saving model....')
-                    torch.save(
-                        {
-                            'model': model.state_dict(),
-                            'optimizer': optimizer.state_dict()
-                        },
-                        '/theia/scratch/brussel/104/vsc10421/model{}_epoch.pt'.format(args.numClasses))
-                    print('Saved model!!!')
+                print('Saving model....')
+                torch.save(
+                    {
+                        'model': model.state_dict(),
+                        'optimizer': optimizer.state_dict()
+                    },
+                    '/theia/scratch/brussel/104/vsc10421/model{}_epoch.pt'.format(args.numClasses))
+                print('Saved model!!!')
 
