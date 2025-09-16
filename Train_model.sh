@@ -19,7 +19,7 @@ ml load Pillow/10.4.0-GCCcore-13.3.0
 ml load rasterio/1.3.11-foss-2024a
 ml load matplotlib/3.9.2-gfbf-2024a
 ml load torchvision/0.21.0-foss-2024a-CUDA-12.6.0
-ml load imbalanced-learn/0.12.3-gfbf-2023a
+ml load imbalanced-learn/0.12.3
 ml load wandb/0.20.1-GCC-13.3.0
 ml load einops/0.8.1-GCCcore-13.3.0
 
