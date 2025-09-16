@@ -22,10 +22,9 @@ import pandas as pd
 from datetime import datetime
 
 # --- USER INPUTS ---
-image_folder = '/Users/robbe_neyns/Library/CloudStorage/OneDrive-VrijeUniversiteitBrussel/Documenten/Research/UHI_tree health/Data analysis/PlanetScope preprocessing/Old PlanetScope data'
-tree_points_file = '/Users/robbe_neyns/Library/CloudStorage/OneDrive-VrijeUniversiteitBrussel/Documenten/Research/UHI_tree health/Data analysis/Tree mapping/Tree locations/Brussels Environment Layers/mobiliteit_shape_manual_adjustment_project/mobiliteit_shape_manual_adjustment_X_Y.shp'  # or .geojson
-#tree_points_file = '/Users/robbe_neyns/Library/CloudStorage/OneDrive-VrijeUniversiteitBrussel/Documenten/Research/UHI_tree health/Data analysis/Tree mapping/Tree locations/flai layers/tree_centroids_x_y_lambert.shp'
-output_folder = '/Users/robbe_neyns/Library/CloudStorage/OneDrive-VrijeUniversiteitBrussel/Documenten/Research/UHI_tree health/Data analysis/Tree mapping apply'
+image_folder = '/Users/robbe_neyns/Documents/Work_local/research/UHI tree health/Data analysis/Data/PlanetScope/Alex PlanetScope'
+tree_points_file = '/Users/robbe_neyns/Documents/Work_local/research/UHI tree health/Data analysis/Tree mapping/Tree locations/Brussels Environment Layers/mobiliteit_shape_manual_adjustment_project/mobiliteit_shape_manual_adjustment_X_Y.shp'
+output_folder = '/Users/robbe_neyns/Documents/Work_local/research/UHI tree health/Planet data/tree csvs gewestwegen 8 band'
 
 # Species string-to-code mapping
 species_map = {
@@ -66,7 +65,7 @@ band_data = {}  # {band_index: pd.DataFrame}
 for filename in os.listdir(image_folder):
     if filename.endswith(".tif"):
         # Extract date from filename
-        date_str = filename.split("_")[0]  # yyyymmdd
+        date_str = filename.split("_")[1]  # yyyymmdd
         try:
             date = datetime.strptime(date_str, "%Y%m%d")
         except ValueError:

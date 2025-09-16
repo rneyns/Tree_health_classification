@@ -249,9 +249,9 @@ class DataSetCatCon(Dataset):
     
     def __getitem__(self, idx):
         # load the images
-        #image = rs.open(f"{self.image_dir}/{int(self.ids[idx])}.tif")
-        #image = image.read()
-        image = np.zeros((self.n_rows, self.n_rows, 4), dtype=np.float32)
+        image = rs.open(f"{self.image_dir}/{int(self.ids[idx])}.tif")
+        image = image.read()
+        #image = np.zeros((self.n_rows, self.n_rows, 4), dtype=np.float32)
         # Build in protection for images patches that differ slightly in size
         shape = image.shape
 
@@ -261,10 +261,10 @@ class DataSetCatCon(Dataset):
             add_row_1 = self.n_rows - shape[1]
         if int(shape[2]) < int(self.n_rows):
             add_row_2 = self.n_rows - shape[2]
-        #image = np.pad(image, ((0, 0), (0, add_row_1), (0, add_row_2)))
-        #image = image.reshape(self.n_rows, self.n_rows, 4)
+        image = np.pad(image, ((0, 0), (0, add_row_1), (0, add_row_2)))
+        image = image.reshape(self.n_rows, self.n_rows, 4)
 
-        #image = transforms.functional.to_tensor(image)
+        image = transforms.functional.to_tensor(image)
 
         return image, self.ids[idx], self.DOY[idx], np.concatenate((self.cls[idx], self.X1[idx])), self.X2[idx], int(self.y[idx])
 

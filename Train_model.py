@@ -123,6 +123,7 @@ if __name__ == "__main__":
         weight_decay=1e-2  # (set if you want)
     )
 
+    optimizer = optim.AdamW(model.parameters(),lr=1e-4, betas=(0.9, 0.99), weight_decay=1e-4)
     scheduler = None
 
     print("param_groups:", [len(g["params"]) for g in optimizer.param_groups])
@@ -160,7 +161,7 @@ if __name__ == "__main__":
                         p.requires_grad = True
                     print("Backbone unfrozen!")
 
-                train_epoch_tab(args, epoch, model.img_net, device, trainloader, optimizer, scheduler, ratio_a=None)
+                train_epoch(args, epoch, model, device, trainloader, optimizer, scheduler, ratio_a=None)
 
                 model.eval()
                 with torch.no_grad():
