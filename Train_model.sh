@@ -8,7 +8,7 @@
 
 #SBATCH --time=20:00:00
 
-#SBATCH --gpu=ampere_gpu
+#SBATCH --partition=ampere_gpu
 
 
 
