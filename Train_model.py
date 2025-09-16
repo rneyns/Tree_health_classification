@@ -22,6 +22,7 @@ if __name__ == "__main__":
     # Force Python/torchvision to use certifi's certificate bundle, this way I can download the resnet weights
     os.environ['SSL_CERT_FILE'] = certifi.where()
 
+
     import torch
     from torch.utils import model_zoo
     import torchvision.models as models
@@ -55,6 +56,10 @@ if __name__ == "__main__":
 
     # usage
     print("Selected device:", device)
+
+    # Set environment variables to avoid the CUDNN internal error
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = True
 
     # 1) Load the data
     trainloader, validloader, testloader, cat_dims, con_idxs, y_dim, DOY, w0_norm, w1_norm, args = dataloader_init(args)
