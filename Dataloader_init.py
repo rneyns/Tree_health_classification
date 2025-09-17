@@ -16,7 +16,7 @@ Created: Thu Jul 31 10:38:11 2023
 import pandas as pd
 import os
 import numpy as np
-from Utils import data_prep, DataSetCatCon, data_prep_premade
+from Utils import data_prep, DataSetCatCon, data_prep_premade, data_prep_premade_apply
 from Utils import train_val_test_div_2
 from Utils import resample
 from torch.utils.data import DataLoader
@@ -24,7 +24,7 @@ import torch
 
 
 def create_DOY(dataset):
-    DOY = torch.from_numpy(np.array([[20], [44], [88], [108], [146], [179], [216], [240], [242], [270], [317], [321]]))
+    #DOY = torch.from_numpy(np.array([[20], [44], [88], [108], [146], [179], [216], [240], [242], [270], [317], [321]])) #DOY from the old Brussels Planet Dataset
     DOY = torch.from_numpy(np.array([[60],[95],[99],[105],[123],[133],[146],[152],[156],[160],[167],[223],[249],[254],[267],[274],[280]]))
 
     DOY = DOY.repeat(len(dataset), 1, 1)
@@ -158,3 +158,44 @@ def prepare_predictloader(args):
     ds = DataSetCatCon(X_train_pre, y_train_pre, DOY_train_pre, ids_train_pre, cat_idxs_pre,
                         args,'clf')  # , continuous_mean_std=continuous_mean_std)
     predictloader = DataLoader(ds, batch_size=args.batch_size, shuffle=False, num_workers=1)
+
+
+def dataloader_init_apply(args):
+    dataset = merge_bands(args)
+
+    # Print some information about the dataset to check if everything is ok
+    num_continuous = (dataset.shape[1] - 3) * 4
+    print(f"number of continous variables: {num_continuous}")
+
+
+    print('---- Initializing the dataloaders ----')
+    DOY = create_DOY(dataset)
+    cat_dims, cat_idxs, con_idxs, X, y, ids, mean, std, DOY = data_prep_premade_apply(
+        ds_id=dataset, DOY=DOY, args=args, seed=args.dset_seed, task=args.task)
+    continuous_mean_std = np.array([mean, std]).astype(np.float32)
+
+    ##### Setting some hyperparams based on inputs and dataset
+    _, nfeat, nbands = X_train['data'].shape
+    print(f"Number of dates: {nfeat}; and number of bands: {nbands}")
+
+    if nfeat > 100:
+        args.embedding_size = min(4, args.embedding_size)
+        # The batch size needs to be at least  to make optimal use of the intersample attention
+        args.batchsize = min(32, args.batchsize)
+    if args.attentiontype != 'col':
+        args.transformer_depth = 1
+        args.attention_heads = 4
+        args.attention_dropout = 0.8
+        args.embedding_size = 16
+        if args.optimizer == 'SGD':
+            args.ff_dropout = 0.4
+            args.lr = 0.01
+        else:
+            args.ff_dropout = 0.8
+
+    apply_ds = DataSetCatCon(X, y, DOY, ids, cat_idxs, args,'clf')#, continuous_mean_std)
+    applyloader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=1)
+
+    cat_dims = np.append(np.array([1]), np.array(cat_dims)).astype(int)  # Appending 1 for CLS token, this is later used to generate embeddings.
+
+    return applyloader, cat_dims, con_idxs, args

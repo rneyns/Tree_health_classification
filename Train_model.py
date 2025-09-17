@@ -189,9 +189,8 @@ if __name__ == "__main__":
 
 
 
-            if acc > best_acc:
-                if acc > best_acc:
-                    best_acc = float(acc)
+            if accuracy > best_acc:
+                best_acc = float(accuracy)
 
                 print('Saving model....')
                 torch.save(
@@ -199,6 +198,6 @@ if __name__ == "__main__":
                         'model': model.state_dict(),
                         'optimizer': optimizer.state_dict()
                     },
-                    '/theia/scratch/brussel/104/vsc10421/model{}_epoch.pt'.format(args.numClasses))
+                    'model{}_epoch.pt'.format(args.numClasses))
                 print('Saved model!!!')
 

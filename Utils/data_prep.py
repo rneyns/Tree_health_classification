@@ -52,6 +52,22 @@ def data_split(X,y,ids, DOY,indices):
     return x_d, y_d, id_d, doy_d
 
 
+def data_split_apply(X, ids, DOY, indices):
+    x_d = {
+        'data': X.values[indices],
+        'mask': X.values[indices]  # np.isnan(X.values[indices]).astype(int)
+    }
+
+    if x_d['data'].shape != x_d['mask'].shape:
+        raise 'Shape of data not same as that of nan mask!'
+
+    id_d = {
+        'id': ids[indices]
+    }
+    doy_d = {'data': DOY[indices]}
+    return x_d, id_d, doy_d
+
+
 def data_prep(ds_id, args, seed, task, datasplit=[.65, .15, .2], pretraining=False):
     
     np.random.seed(seed) #this is a utility function supporting older numpy code to provide a seed for a random number generator --> this makes sure that the random numbers that are generated with randn will always be the same 
@@ -212,6 +228,65 @@ def data_prep_premade(ds_id, DOY, args, seed, task, pretraining=False):
     # import ipdb; ipdb.set_trace()
     
     return cat_dims, cat_idxs, con_idxs, X_train, y_train, ids_train, X_valid, y_valid, ids_valid, X_test, y_test, ids_test, train_mean, train_std, DOY_train, DOY_valid
+
+def data_prep_premade_apply(ds_id, DOY, args, seed, task, pretraining=False):
+    np.random.seed(
+        seed)  # this is a utility function supporting older numpy code to provide a seed for a random number generator --> this makes sure that the random numbers that are generated with randn will always be the same
+    # dataset = pd.read_csv(ds_id)
+    dataset = ds_id
+    print(dataset.columns)
+
+    ids = dataset[args.IDHeader].values
+    X = dataset.drop([args.IDHeader], axis=1)
+
+
+    attribute_names = X.columns.to_list()
+    categorical_indicator = [False for x in range(len(attribute_names))]
+
+    categorical_columns = X.columns[list(np.where(np.array(categorical_indicator) == True)[0])].tolist()
+    cont_columns = list(set(X.columns.tolist()) - set(categorical_columns))
+
+    cat_idxs = list(np.where(np.array(categorical_indicator) == True)[0])
+    con_idxs = list(set(range(len(X.columns))) - set(cat_idxs))
+
+    for col in categorical_columns:
+        X[col] = X[col].astype("object")
+
+    # X["Set"] = np.random.choice(["train", "valid", "test"], p = datasplit, size=(X.shape[0],))
+
+    indices = dataset.index
+
+    # X = X.drop(columns=['Set'])
+    X = X.applymap(replace_nan_with_list)  # X.applymap(lambda x: fill_missing(x))
+    # X = X.applymap(print_non_4_lists)
+    print(X.head(5))
+
+    cat_dims = []
+    for col in categorical_columns:
+        #     X[col] = X[col].cat.add_categories("MissingValue")
+        X[col] = X[col].fillna("MissingValue")
+        l_enc = LabelEncoder()
+        X[col] = l_enc.fit_transform(X[col].values)
+        cat_dims.append(len(l_enc.classes_))
+
+    #     X[col].fillna("MissingValue",inplace=True)
+    # X.fillna(X.loc[train_indices, col].mean(), inplace=True) #We just fill up with the mean in the continuous columns whereever we have NaN
+
+    X, ids, DOY = data_split_apply(X, ids, DOY, indices)
+
+    # Make sure the last dimension (the bands) are in the right format
+    print(f"the shape of the Xtrain is: {X['data'].shape}")
+
+    X['data'] = np.array([np.array([np.array(xi) for xi in x]) for x in X['data']])
+
+    mean, std = np.array(X['data'], dtype=np.float32).mean(0), np.array(X['data'][:, con_idxs],
+                                                                                          dtype=np.float32).std(
+        0)  # I think the "data" has to go here because there is no such overlapping column name in my dataset --> dus toch niet, de data werkt
+    # train_mean, train_std = np.array(X_train[:,con_idxs],dtype=np.float32).mean(0), np.array(X_train[:,con_idxs],dtype=np.float32).std(0)
+    train_std = np.where(train_std < 1e-6, 1e-6, train_std)
+    # import ipdb; ipdb.set_trace()
+
+    return cat_dims, cat_idxs, con_idxs, X, ids, mean, std, DOY
 
 
 class DataSetCatCon(Dataset):

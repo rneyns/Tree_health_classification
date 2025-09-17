@@ -322,4 +322,39 @@ def train_epoch_img(args, epoch, model, device, dataloader, optimizer, scheduler
         if step % 10 == 0:
             wandb.log({"loss_img": loss})
 
+def make_predictions(model, dataloader, device):
+    model.eval()
+    all_predictions = []
+    idxs = []
+    correct = []
+    ys = []
+    with torch.no_grad():
+        for step, batch in enumerate(dataloader):
+            # Unpack
+            image, ids, DOY, x_categ, x_cont, y_gts = batch
+
+            # Move + cast
+            image = image.to(device, non_blocking=True).float()
+            DOY = DOY.to(device, non_blocking=True).float()
+            x_categ = x_categ.to(device, non_blocking=True).float()
+            x_cont = x_cont.to(device, non_blocking=True).float()
+            label = y_gts.to(device, non_blocking=True).long().view(-1)  # CE expects [N] Long
+
+            optimizer.zero_grad(set_to_none=True)
+            # Forward pass
+            _, x_categ_enc, x_cont_enc, con_mask = embed_data_mask(x_categ, x_cont, model.tab_net, False, DOY=DOY)
+
+            a, v, out = model(image, x_categ_enc, x_cont_enc, con_mask)
+            y_outs = torch.nn.functional.softmax(out, dim=1)
+            y_label = torch.argmax(y_outs, dim=1)
+            all_predictions.extend(y_label.cpu().numpy())
+            idxs.extend(ids.numpy())
+            ys.extend(y_outs.cpu().numpy())
+            for i in range(len(y_label.cpu().numpy())):
+                if y_label.cpu().numpy()[i] == y.cpu().numpy()[i]:
+                    correct.append(1)
+                else:
+                    correct.append(0)
+    return idxs, ys, np.array(all_predictions), correct
+
 
