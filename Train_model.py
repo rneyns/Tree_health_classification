@@ -198,6 +198,6 @@ if __name__ == "__main__":
                         'model': model.state_dict(),
                         'optimizer': optimizer.state_dict()
                     },
-                    'model{}_epoch.pt'.format(args.numClasses))
+                    '/Users/robbe_neyns/Documents/Work_local/research/UHI tree health/Data analysis/model{}_epoch.pt'.format(args.numClasses))
                 print('Saved model!!!')
 
