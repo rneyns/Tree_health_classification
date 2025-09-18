@@ -23,8 +23,9 @@ from datetime import datetime
 
 # --- USER INPUTS ---
 image_folder = '/Users/robbe_neyns/Documents/Work_local/research/UHI tree health/Data analysis/Data/PlanetScope/Alex PlanetScope'
-tree_points_file = '/Users/robbe_neyns/Documents/Work_local/research/UHI tree health/Data analysis/Tree mapping/Tree locations/Brussels Environment Layers/mobiliteit_shape_manual_adjustment_project/mobiliteit_shape_manual_adjustment_X_Y.shp'
-output_folder = '/Users/robbe_neyns/Documents/Work_local/research/UHI tree health/Planet data/tree csvs gewestwegen 8 band'
+#tree_points_file = '/Users/robbe_neyns/Documents/Work_local/research/UHI tree health/Data analysis/Tree mapping/Tree locations/Brussels Environment Layers/mobiliteit_shape_manual_adjustment_project/mobiliteit_shape_manual_adjustment_X_Y.shp'
+tree_points_file = '/Users/robbe_neyns/Documents/Work_local/research/UHI tree health/Data analysis/Tree mapping/extraction street trees/extracted_trees_10m.shp'
+output_folder = '/Users/robbe_neyns/Documents/Work_local/research/UHI tree health/Planet data/tree csvs apply 10m'
 
 # Species string-to-code mapping
 species_map = {
