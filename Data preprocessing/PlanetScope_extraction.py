@@ -106,6 +106,7 @@ for b, df in band_data.items():
     # Sort columns numerically by DOY
     date_cols_sorted = sorted(date_cols, key=lambda x: int(x))
     df = df[fixed_cols + date_cols_sorted]
+    df.drop("species_code", axis=1, inplace=True)
 
     output_csv = os.path.join(output_folder, f"band_{b}.csv")
     df.to_csv(output_csv, index=False)

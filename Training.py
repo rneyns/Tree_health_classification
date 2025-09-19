@@ -21,6 +21,7 @@ from augmentations import add_noise
 import torch
 import torch.nn as nn
 import wandb
+import numpy as np
 
 def prepare_data_embedding(data, args, model, device, cat_mask=None, con_mask=None):
     # x_categ is the the categorical data, with y appended as last feature. x_cont has continuous data. cat_mask is an array of ones same shape as x_categ except for last column(corresponding to y's) set to 0s. con_mask is an array of ones same shape as x_cont.
@@ -340,7 +341,6 @@ def make_predictions(model, dataloader, device):
             x_cont = x_cont.to(device, non_blocking=True).float()
             label = y_gts.to(device, non_blocking=True).long().view(-1)  # CE expects [N] Long
 
-            optimizer.zero_grad(set_to_none=True)
             # Forward pass
             _, x_categ_enc, x_cont_enc, con_mask = embed_data_mask(x_categ, x_cont, model.tab_net, False, DOY=DOY)
 
@@ -350,11 +350,6 @@ def make_predictions(model, dataloader, device):
             all_predictions.extend(y_label.cpu().numpy())
             idxs.extend(ids.numpy())
             ys.extend(y_outs.cpu().numpy())
-            for i in range(len(y_label.cpu().numpy())):
-                if y_label.cpu().numpy()[i] == y.cpu().numpy()[i]:
-                    correct.append(1)
-                else:
-                    correct.append(0)
-    return idxs, ys, np.array(all_predictions), correct
+    return idxs, ys, np.array(all_predictions)
 
 

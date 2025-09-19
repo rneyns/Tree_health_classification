@@ -32,7 +32,7 @@ def create_DOY(dataset):
     return DOY
 
 
-def merge_bands(args):
+def merge_bands(args, apply=False):
     #The reflection of each band is in a separate csv file. This function merges them into one dataframe in a coherent way
     dfs = []
     for df in os.listdir(args.multiTemp):
@@ -48,7 +48,8 @@ def merge_bands(args):
 
     # make sure that the id and label column is not a list
     print(df1.columns)
-    dataset[args.labelHeader] = df1[args.labelHeader]
+    if not apply:
+        dataset[args.labelHeader] = df1[args.labelHeader]
     dataset[args.IDHeader] = df1[args.IDHeader]
 
     # Add this dataframe to the final list
@@ -161,7 +162,7 @@ def prepare_predictloader(args):
 
 
 def dataloader_init_apply(args):
-    dataset = merge_bands(args)
+    dataset = merge_bands(args, True)
 
     # Print some information about the dataset to check if everything is ok
     num_continuous = (dataset.shape[1] - 3) * 4
@@ -170,31 +171,25 @@ def dataloader_init_apply(args):
 
     print('---- Initializing the dataloaders ----')
     DOY = create_DOY(dataset)
-    cat_dims, cat_idxs, con_idxs, X, y, ids, mean, std, DOY = data_prep_premade_apply(
+    cat_dims, cat_idxs, con_idxs, X, ids, mean, std, DOY= data_prep_premade_apply(
         ds_id=dataset, DOY=DOY, args=args, seed=args.dset_seed, task=args.task)
     continuous_mean_std = np.array([mean, std]).astype(np.float32)
 
     ##### Setting some hyperparams based on inputs and dataset
-    _, nfeat, nbands = X_train['data'].shape
+    _, nfeat, nbands = X['data'].shape
     print(f"Number of dates: {nfeat}; and number of bands: {nbands}")
 
     if nfeat > 100:
         args.embedding_size = min(4, args.embedding_size)
-        # The batch size needs to be at least  to make optimal use of the intersample attention
-        args.batchsize = min(32, args.batchsize)
     if args.attentiontype != 'col':
         args.transformer_depth = 1
         args.attention_heads = 4
         args.attention_dropout = 0.8
         args.embedding_size = 16
-        if args.optimizer == 'SGD':
-            args.ff_dropout = 0.4
-            args.lr = 0.01
-        else:
-            args.ff_dropout = 0.8
+        args.ff_dropout = 0.8
 
-    apply_ds = DataSetCatCon(X, y, DOY, ids, cat_idxs, args,'clf')#, continuous_mean_std)
-    applyloader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=1)
+    apply_ds = DataSetCatCon(X, None, DOY, ids, cat_idxs, args,'clf')#, continuous_mean_std)
+    applyloader = DataLoader(apply_ds, batch_size=150, shuffle=True, num_workers=1)
 
     cat_dims = np.append(np.array([1]), np.array(cat_dims)).astype(int)  # Appending 1 for CLS token, this is later used to generate embeddings.
 

@@ -8,6 +8,7 @@ Created on Fri Dec 15 09:23:31 2023
 if __name__ == "__main__":
     import os
     import certifi
+    import pandas as pd
 
     # Force Python/torchvision to use certifi's certificate bundle, this way I can download the resnet weights
     os.environ['SSL_CERT_FILE'] = certifi.where()
@@ -28,6 +29,7 @@ if __name__ == "__main__":
 
     args = get_arguments_apply()
 
+
     #setup_seed(args.random_seed)
 
     if torch.cuda.is_available():
@@ -41,7 +43,7 @@ if __name__ == "__main__":
         print("Using CPU")
 
     # 1) Load the data
-    applyloader, cat_dims, con_idxs, y_dim, DOY, w0_norm, w1_norm, args = dataloader_init_apply(args)
+    applyloader, cat_dims, con_idxs, args= dataloader_init_apply(args)
 
     # 2) Initialize the model
     model = initialize_model(args, device, cat_dims, con_idxs)
@@ -55,20 +57,30 @@ if __name__ == "__main__":
     print("Unexpected:", load_info.unexpected_keys[:10])
 
     vision_dset =  False
-    print(y_dim)
+
     print(args.task)
 
     model.to(device)
 
     print(type(model))
-    print(hasattr(model, "module"), hasattr(model, "img_net"))
 
-    w_pre = weights["layer1.0.conv1.weight"].flatten()[:5]
-    w_now = model.img_net.state_dict()["layer1.0.conv1.weight"].flatten()[:5]
-    print("Pretrained sample:", w_pre)
-    print("Model sample:", w_now)
 
     #5) make predictions on the datain the applyloader
-    make_predictions(model, applyloader, device)
+    idxs, ys, all_predictions = make_predictions(model, applyloader, device)
 
+    # Make sure idxs are ints
+    idxs = [int(i) for i in idxs]
+
+    # Convert ys (list of lists) into a 2D array
+    ys_array = np.array(ys)
+
+    # Build DataFrame
+    df = pd.DataFrame(ys_array, columns=[f"y_true_{i}" for i in range(ys_array.shape[1])])
+    df.insert(0, "idx", idxs)  # add idx as first column
+    df["y_pred"] = all_predictions  # add predictions as last column
+
+    # Save to CSV
+    df.to_csv("/Users/robbe_neyns/Documents/Work_local/research/UHI tree health/Data analysis/predictions.csv", index=False)
+
+    print("Saved to predictions.csv")
 

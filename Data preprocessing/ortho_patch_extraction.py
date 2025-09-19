@@ -119,7 +119,7 @@ def process_coordinates(shapefile, tiles_folder, output_folder, tile_extents):
             patch, meta = cut_patch_from_tile(tile_path_rgb, central_lon, central_lat)
 
             # Save the patch to the output folder with the tile ID as filename
-            output_path = os.path.join(output_folder, f'{id}.tif')
+            output_path = os.path.join(output_folder, f'{int(id)}.tif')
             with rasterio.open(output_path, 'w', **meta) as dst:
                 dst.write(patch)
 

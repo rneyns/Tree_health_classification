@@ -119,7 +119,6 @@ def get_arguments():
     return args
 
 def get_arguments_apply():
-    parser = argparse.ArgumentParser()
 
     parser = argparse.ArgumentParser()
 
@@ -200,3 +199,5 @@ def get_arguments_apply():
     args = parser.parse_args()
     #
     args.use_cuda = torch.cuda.is_available() and not args.no_cuda
+
+    return args

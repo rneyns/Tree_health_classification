@@ -283,7 +283,7 @@ def data_prep_premade_apply(ds_id, DOY, args, seed, task, pretraining=False):
                                                                                           dtype=np.float32).std(
         0)  # I think the "data" has to go here because there is no such overlapping column name in my dataset --> dus toch niet, de data werkt
     # train_mean, train_std = np.array(X_train[:,con_idxs],dtype=np.float32).mean(0), np.array(X_train[:,con_idxs],dtype=np.float32).std(0)
-    train_std = np.where(train_std < 1e-6, 1e-6, train_std)
+    std = np.where(std < 1e-6, 1e-6, std)
     # import ipdb; ipdb.set_trace()
 
     return cat_dims, cat_idxs, con_idxs, X, ids, mean, std, DOY
@@ -306,10 +306,13 @@ class DataSetCatCon(Dataset):
         self.X1_mask = X_mask[:,cat_cols].copy().astype(np.int64) #categorical columns
         self.X2_mask = X_mask # [:,con_cols].copy().astype(np.int64) #numerical columns
         self.ids = np.array(ids['id'])
-        if task == 'clf':
-            self.y = Y['data'].astype(np.intc)
+        if Y is not None:
+            if task == 'clf':
+                self.y = Y['data'].astype(np.intc)
+            else:
+                self.y = Y['data'].astype(np.intc)
         else:
-            self.y = Y['data'].astype(np.intc)
+            self.y = np.zeros((len(self.X2),1),dtype=int) # this is in case we are in the apply scenario
         num_s, dates, bands = X.shape
         self.cls = np.zeros((num_s, 1, bands),dtype=int)
         self.cls_mask = np.ones((num_s, 1, bands),dtype=int)
