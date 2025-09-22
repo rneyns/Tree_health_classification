@@ -16,25 +16,15 @@
 
 ml purge
 
-ml load Pillow/9.1.1-GCCcore-11.3.0
+ml load scikit-learn/1.5.2-gfbf-2024a
+ml load Pillow/10.4.0-GCCcore-13.3.0
+ml load rasterio/1.3.11-foss-2024a
+ml load matplotlib/3.9.2-gfbf-2024a
+ml load torchvision/0.21.0-foss-2024a-CUDA-12.6.0
+ml load imbalanced-learn/0.12.3
+ml load wandb/0.20.1-GCC-13.3.0
+ml load einops/0.8.1-GCCcore-13.3.0
 
-ml load rasterio/1.3.4-foss-2022a
-
-ml load matplotlib/3.5.2-foss-2022a
-
-ml load torchsampler/0.1.2-foss-2022a-CUDA-11.7.0
-
-ml load torchvision/0.13.1-foss-2022a-CUDA-11.7.0
-
-ml load PyTorch-Lightning/1.7.7-foss-2022a-CUDA-11.7.0
-
-ml load imbalanced-learn/0.10.1-foss-2022a
-
-ml load wandb/0.13.4-GCCcore-11.3.0
-
-ml load R/4.2.1-foss-2022a
-
-ml load einops/0.4.1-GCCcore-11.3.0
 
 
 
