@@ -2,13 +2,13 @@
 
 #SBATCH --ntasks=1
 
-#SBATCH --gpus-per-node=1
+#SBATCH --gpus=1
 
-#SBATCH --mem=40gb
+#SBATCH --mem-per-gpu=16gb
 
-#SBATCH --time=20:00:00
+#SBATCH --time=1:00:00
 
-#SBATCH --partition=ampere_gpu
+
 
 
 
