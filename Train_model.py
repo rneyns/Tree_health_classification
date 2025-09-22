@@ -171,7 +171,7 @@ if __name__ == "__main__":
                     p.requires_grad = True
                 print("Backbone unfrozen!")
 
-            train_epoch_img(args, epoch, model.img_net, device, trainloader, optimizer, scheduler, ratio_a=None)
+            train_epoch_tab(args, epoch, model.tab_net, device, trainloader, optimizer, scheduler, ratio_a=None)
 
             model.eval()
             with torch.no_grad():

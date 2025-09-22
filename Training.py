@@ -277,10 +277,11 @@ def train_epoch_tab(args, epoch, model, device, dataloader, optimizer, scheduler
         # Logging
         running_loss += loss.item()
         steps += 1
-        if step % 10 == 0:
+        if step % 20 == 0:
             try:
                 import wandb
                 wandb.log({"loss_tab": loss.item(), "epoch": epoch, "step": step})
+                print(f"Maximum used memory: {torch.cuda.memory.max_memory_allocated(device=None)}")
             except Exception:
                 pass
 
