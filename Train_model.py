@@ -67,21 +67,31 @@ if __name__ == "__main__":
     # 2) Initialize the model
     model = initialize_model(args, device, cat_dims, con_idxs)
 
+    imagenet_weights = True
     # 3) Get pretrained resnet18
-    weights = models.ResNet18_Weights.DEFAULT
-    resnet18_pre = models.resnet18(weights=weights)
+    if imagenet_weights == True:
+        weights = models.ResNet18_Weights.DEFAULT
+        resnet18_pre = models.resnet18(weights=weights)
 
-    # 4) Load into YOUR model (adjust ".backbone" to your attribute name or remove it if not wrapped)
-    state = resnet18_pre.state_dict()
-    core = getattr(model, "module", model)  # unwrap DDP/DataParallel if present
-    load_target = getattr(core, "img_net", core)  # your attribute
-    # If load_target is still a wrapper holding the real resnet in .backbone:
-    if hasattr(load_target, "backbone"):
-        load_target = load_target.backbone  # <-- descend to the real resnet
-    load_info = load_target.load_state_dict(state, strict=False)
-    print("Missing:", load_info.missing_keys[:10])
-    print("Unexpected:", load_info.unexpected_keys[:10])
-
+        # 4) Load into YOUR model (adjust ".backbone" to your attribute name or remove it if not wrapped)
+        state = resnet18_pre.state_dict()
+        core = getattr(model, "module", model)  # unwrap DDP/DataParallel if present
+        load_target = getattr(core, "img_net", core)  # your attribute
+        # If load_target is still a wrapper holding the real resnet in .backbone:
+        if hasattr(load_target, "backbone"):
+            load_target = load_target.backbone  # <-- descend to the real resnet
+        load_info = load_target.load_state_dict(state, strict=False)
+        print("Missing:", load_info.missing_keys[:10])
+        print("Unexpected:", load_info.unexpected_keys[:10])
+        w_pre = state["layer1.0.conv1.weight"].flatten()[:5]
+        w_now = model.img_net.state_dict()["layer1.0.conv1.weight"].flatten()[:5]
+        print("Pretrained sample:", w_pre)
+        print("Model sample:", w_now)
+    else:
+        weights = torch.load('/Users/robbe_neyns/Documents/Work_local/research/UHI tree health/Data analysis/model_weights_ResNET18_v2.pth')
+        load_info = model.img_net.load_state_dict(weights, strict=False)
+        print("Missing:", load_info.missing_keys)
+        print("Unexpected:", load_info.unexpected_keys)
     vision_dset =  False
     print(y_dim)
     print(args.task)
@@ -90,11 +100,6 @@ if __name__ == "__main__":
 
     print(type(model))
     print(hasattr(model, "module"), hasattr(model, "img_net"))
-
-    w_pre = state["layer1.0.conv1.weight"].flatten()[:5]
-    w_now = model.img_net.state_dict()["layer1.0.conv1.weight"].flatten()[:5]
-    print("Pretrained sample:", w_pre)
-    print("Model sample:", w_now)
 
     wandb.login(key='f746dc65fb72b570908ed1dd5b2b780d7e438243')
     wandb.init(
@@ -165,7 +170,7 @@ if __name__ == "__main__":
                     p.requires_grad = True
                 print("Backbone unfrozen!")
 
-            train_epoch(args, epoch, model, device, trainloader, optimizer, scheduler, ratio_a=None)
+            train_epoch_img(args, epoch, model.img_net, device, trainloader, optimizer, scheduler, ratio_a=None)
 
             model.eval()
             with torch.no_grad():
@@ -198,6 +203,6 @@ if __name__ == "__main__":
                         'model': model.state_dict(),
                         'optimizer': optimizer.state_dict()
                     },
-                    '/Users/robbe_neyns/Documents/Work_local/research/UHI tree health/Data analysis/model{}_epoch.pt'.format(args.numClasses))
+                    '/Users/robbe_neyns/Documents/Work_local/research/UHI tree health/Data analysis/model_imgnet{}_epoch.pt'.format(args.numClasses))
                 print('Saved model!!!')
 

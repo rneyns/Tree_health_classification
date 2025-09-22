@@ -319,9 +319,11 @@ def train_epoch_img(args, epoch, model, device, dataloader, optimizer, scheduler
         loss.backward()
         optimizer.step()
         # print(running_loss)
+        acc_img = torch.sum(torch.argmax(y_outs, dim=1) == y_gts.squeeze()) / y_outs.size(0)
 
-        if step % 10 == 0:
+        if step % 20 == 0:
             wandb.log({"loss_img": loss})
+            wandb.log({"acc_img_train": acc_img})
 
 def make_predictions(model, dataloader, device):
     model.eval()
