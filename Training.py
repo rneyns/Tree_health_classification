@@ -324,6 +324,7 @@ def train_epoch_img(args, epoch, model, device, dataloader, optimizer, scheduler
         if step % 20 == 0:
             wandb.log({"loss_img": loss})
             wandb.log({"acc_img_train": acc_img})
+            print(f"Maximum used memory: {torch.cuda.memory.max_memory_allocated(device=None)}")
 
 def make_predictions(model, dataloader, device):
     model.eval()
