@@ -67,7 +67,7 @@ if __name__ == "__main__":
     # 2) Initialize the model
     model = initialize_model(args, device, cat_dims, con_idxs)
 
-    imagenet_weights = True
+    imagenet_weights = False
     # 3) Get pretrained resnet18
     if imagenet_weights == True:
         weights = models.ResNet18_Weights.DEFAULT
@@ -170,7 +170,7 @@ if __name__ == "__main__":
                     p.requires_grad = True
                 print("Backbone unfrozen!")
 
-            train_epoch_img(args, epoch, model.img_net, device, trainloader, optimizer, scheduler, ratio_a=None)
+            train_epoch(args, epoch, model, device, trainloader, optimizer, scheduler, ratio_a=None)
 
             model.eval()
             with torch.no_grad():
