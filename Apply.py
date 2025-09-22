@@ -9,6 +9,7 @@ if __name__ == "__main__":
     import os
     import certifi
     import pandas as pd
+    import numpy as np
 
     # Force Python/torchvision to use certifi's certificate bundle, this way I can download the resnet weights
     os.environ['SSL_CERT_FILE'] = certifi.where()
