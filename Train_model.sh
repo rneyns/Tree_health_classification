@@ -8,7 +8,7 @@
 
 #SBATCH --time=1:00:00
 
-#SBATCH --p=pascal_gpu
+#SBATCH --partition=pascal_gpu
 
 
 
