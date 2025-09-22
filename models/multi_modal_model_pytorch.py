@@ -202,6 +202,7 @@ class MM_model(nn.Module):
             
      
     def forward(self, img,  x_categ_enc, x_cont_enc, con_mask):
+        print(torch.cuda.memory.max_memory_allocated(device=None))
         img = self.img_net(img)
         reps = self.tab_net.transformer(x_categ_enc, x_cont_enc, con_mask)
         y_reps = reps[:,0,:]
