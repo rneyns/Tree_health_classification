@@ -25,8 +25,7 @@ ml load wandb/0.20.1-GCC-13.3.0
 ml load einops/0.8.1-GCCcore-13.3.0
 
 
-source tree_health/bin/activate
-
 cd /user/brussel/104/vsc10421/Tree_health_classification
+source tree_health/bin/activate
 
 python -u Train_model.py  -i "/data/brussel/104/vsc10421/tree health classification/output_patches/output_patches_hydra/" -multi "/data/brussel/104/vsc10421/tree health classification/output_patches/5_species_other/" -lh species_code -idh tree_id -w 120 -ts 17 -nc 6 --epochs 10 --alpha 0.5 --task 'multiclass' --undersample --spatio_temp --batch_size 16
