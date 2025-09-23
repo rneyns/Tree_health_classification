@@ -4,7 +4,7 @@
 
 #SBATCH --gpus=1
 
-#SBATCH --mem-per-gpu=16gb
+#SBATCH --mem-per-gpu=24gb
 
 #SBATCH --time=1:00:00
 
