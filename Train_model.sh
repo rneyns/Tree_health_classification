@@ -17,11 +17,8 @@
 ml purge
 
 cd /data/brussel/104/vsc10421/
-module load Python/3.12.3-GCCcore-13.3.0 SciPy-bundle/2024.05-gfbf-2024a
-python3 -m venv tree_health_venv2 --system-site-packages
-source tree_health_venv2/bin/activate
-python3 -m pip install imbalanced-learn
 
+module load Python/3.12.3-GCCcore-13.3.0 SciPy-bundle/2024.05-gfbf-2024a
 ml load scikit-learn/1.5.2-gfbf-2024a
 ml load Pillow/10.4.0-GCCcore-13.3.0
 ml load rasterio/1.3.11-foss-2024a
@@ -30,6 +27,11 @@ ml load torchvision/0.21.0-foss-2024a-CUDA-12.6.0
 ml load wandb/0.20.1-GCC-13.3.0
 ml load einops/0.8.1-GCCcore-13.3.0
 ml load PyTorch/2.6.0-foss-2024a-CUDA-12.6.0
+
+
+source tree_health_venv2/bin/activate
+python3 -m pip install torchmetrics
+
 
 cd /user/brussel/104/vsc10421/Tree_health_classification/
 
