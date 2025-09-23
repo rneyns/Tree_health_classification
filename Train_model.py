@@ -37,6 +37,8 @@ if __name__ == "__main__":
     import wandb
 
     print(f"The benchmark setting is on: {torch.backends.cudnn.benchmark}")
+    torch.backends.cudnn.benchmark = True
+    print(f"The benchmark setting is on: {torch.backends.cudnn.benchmark}")
     args = get_arguments()
 
     #setup_seed(args.random_seed)
