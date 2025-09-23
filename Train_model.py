@@ -166,13 +166,13 @@ if __name__ == "__main__":
 
             model.train()
 
-            if epoch == 1:
+            if epoch == 2:
                 # 3) Unfreeze backbone after 4 epochs
                 for p in model.parameters():
                     p.requires_grad = True
                 print("Backbone unfrozen!")
 
-            train_epoch_img(args, epoch, model.img_net, device, trainloader, optimizer, scheduler, ratio_a=None)
+            train_epoch(args, epoch, model, device, trainloader, optimizer, scheduler, ratio_a=None)
 
             model.eval()
             with torch.no_grad():
