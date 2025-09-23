@@ -88,6 +88,7 @@ if __name__ == "__main__":
         print("Pretrained sample:", w_pre)
         print("Model sample:", w_now)
     else:
+        #weights = torch.load('/Users/robbe_neyns/Documents/Work_local/research/UHI tree health/Data analysis/model_weights_ResNET18_v2.pth')
         weights = torch.load('model_weights_ResNET18_v2.pth')
         load_info = model.img_net.load_state_dict(weights, strict=False)
         print("Missing:", load_info.missing_keys)
@@ -146,9 +147,9 @@ if __name__ == "__main__":
     # 1) Freeze backbone
     for n, p in model.img_net.named_parameters():
         if n.startswith(("conv0", "fc")):
-            p.requires_grad = False
-        else:
             p.requires_grad = True
+        else:
+            p.requires_grad = False
 
     # Check
     print("Any trainable params:", any(p.requires_grad for p in model.img_net.parameters()))
@@ -167,11 +168,11 @@ if __name__ == "__main__":
 
             if epoch == 1:
                 # 3) Unfreeze backbone after 4 epochs
-                for p in load_target.parameters():
+                for p in model.parameters():
                     p.requires_grad = True
                 print("Backbone unfrozen!")
 
-            train_epoch_tab(args, epoch, model.tab_net, device, trainloader, optimizer, scheduler, ratio_a=None)
+            train_epoch_img(args, epoch, model.img_net, device, trainloader, optimizer, scheduler, ratio_a=None)
 
             model.eval()
             with torch.no_grad():
