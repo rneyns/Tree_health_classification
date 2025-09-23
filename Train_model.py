@@ -17,10 +17,7 @@ Created: Tue Sep 19 15:07:11 2023
 
 if __name__ == "__main__":
     import os
-    import certifi
 
-    # Force Python/torchvision to use certifi's certificate bundle, this way I can download the resnet weights
-    os.environ['SSL_CERT_FILE'] = certifi.where()
 
 
     import torch
