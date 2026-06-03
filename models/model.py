@@ -265,16 +265,18 @@ class TabAttention(nn.Module):
             input_size = (dim * self.num_categories) + (dim * num_continuous)
             nfeats = self.num_categories + num_continuous
         elif self.cont_embeddings == 'temporal':
+            print(f"self.num_continuous is {self.num_continuous}")
             embedding = Embedding(
-                d_y=4,
+                d_y=num_continuous,
                 d_x=1,
                 d_model=self.dim,
                 time_emb_dim=6,  ## what is time_emb_dim??
                 method="temporal"
             )
         elif self.cont_embeddings == 'spatio-temporal':
+            print(f"self.num_continuous is {self.num_continuous}")
             embedding = Embedding(
-                d_y=4,
+                d_y=num_continuous,
                 d_x=1,
                 d_model=self.dim,
                 time_emb_dim=6,  ## what is time_emb_dim??
