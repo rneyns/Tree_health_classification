@@ -257,6 +257,7 @@ class TabAttention(nn.Module):
         self.norm = nn.LayerNorm(num_continuous, dtype=torch.float64)
         self.num_continuous = num_continuous
         self.dim = dim
+        self.nbands
         self.cont_embeddings = cont_embeddings
         self.attentiontype = attentiontype
 
@@ -265,18 +266,16 @@ class TabAttention(nn.Module):
             input_size = (dim * self.num_categories) + (dim * num_continuous)
             nfeats = self.num_categories + num_continuous
         elif self.cont_embeddings == 'temporal':
-            print(f"self.num_continuous is {self.num_continuous}")
             embedding = Embedding(
-                d_y=num_continuous,
+                d_y=self.n_bands,
                 d_x=1,
                 d_model=self.dim,
                 time_emb_dim=6,  ## what is time_emb_dim??
                 method="temporal"
             )
         elif self.cont_embeddings == 'spatio-temporal':
-            print(f"self.num_continuous is {self.num_continuous}")
             embedding = Embedding(
-                d_y=num_continuous,
+                d_y=self.n_bands,
                 d_x=1,
                 d_model=self.dim,
                 time_emb_dim=6,  ## what is time_emb_dim??
