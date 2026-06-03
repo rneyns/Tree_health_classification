@@ -32,4 +32,4 @@ source tree_health_venv2/bin/activate
 
 cd /user/brussel/104/vsc10421/Tree_health_classification/
 
-python -u Train_model.py  -i "/data/brussel/104/vsc10421/tree health classification/output_patches/output_patches_hydra/" -multi "/data/brussel/104/vsc10421/tree health classification/output_patches/5_species_other/" -lh species_code -idh tree_id -w 120 -ts 17 -nc 6 --epochs 10 --alpha 0.5 --task 'multiclass' --undersample --spatio_temp --batch_size 16
+python -u Train_model.py  -i "/data/brussel/104/vsc10421/tree health classification/output_patches/output_patches_big/" -multi "/data/brussel/104/vsc10421/tree health classification/output_patches/tree csvs gewestwegen 8 band/" -lh species_code -idh tree_id -w 120 -ts 17 -nc 6 --epochs 10 --alpha 0.5 --task 'multiclass' --undersample --spatio_temp --batch_size 32
