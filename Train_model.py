@@ -58,7 +58,7 @@ if __name__ == "__main__":
 
     # Set environment variables to avoid the CUDNN internal error
     torch.backends.cudnn.deterministic = False
-    torch.backends.cudnn.benchmark = True
+    torch.backends.cudnn.benchmark = False
 
     # 1) Load the data
     trainloader, validloader, testloader, cat_dims, con_idxs, y_dim, DOY, w0_norm, w1_norm, args = dataloader_init(args)
