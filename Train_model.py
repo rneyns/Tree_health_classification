@@ -87,6 +87,7 @@ if __name__ == "__main__":
         print("Pretrained sample:", w_pre)
         print("Model sample:", w_now)
     else:
+        print("train from scratch")
         #weights = torch.load('/Users/robbe_neyns/Documents/Work_local/research/UHI tree health/Data analysis/model_weights_ResNET18_v2.pth')
         #weights = torch.load('/Users/robbe_neyns/Documents/Work_local/research/UHI tree health/Data analysis/model6_epoch.pt')
         #weights = torch.load('model_weights_ResNET18_v2.pth')
