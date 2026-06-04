@@ -91,7 +91,7 @@ class Bottleneck(nn.Module):
 
 class depth_sep_conv(nn.Module):
     def __init__(self,input_size,output_size):
-        super(depth_sep_conv,self).__init()
+        super(depth_sep_conv,self).__init__()
         self.depth_conv = nn.Conv1d(in_channels=input_size, out_channels=input_size, kernel_size=1, groups=input_size)
         self.point_conv = nn.Conv1d(in_channels=input_size, out_channels=output_size, kernel_size=1)
         
@@ -149,7 +149,7 @@ class imgClassifier(nn.Module):
         
     def forward(self, img):
         #For the image data
-        print(f"img shape: {img.shape}, dtype: {img.dtype}")
+        img = img.contiguous()
         img = self.conv0(img)
         img = self.conv1(img)
         img = self.bn1(img)
