@@ -89,11 +89,11 @@ if __name__ == "__main__":
     else:
         #weights = torch.load('/Users/robbe_neyns/Documents/Work_local/research/UHI tree health/Data analysis/model_weights_ResNET18_v2.pth')
         #weights = torch.load('/Users/robbe_neyns/Documents/Work_local/research/UHI tree health/Data analysis/model6_epoch.pt')
-        weights = torch.load('model_weights_ResNET18_v2.pth')
-        load_info = model.img_net.load_state_dict(weights, strict=False)
+        #weights = torch.load('model_weights_ResNET18_v2.pth')
+        #load_info = model.img_net.load_state_dict(weights, strict=False)
 
-        print("Missing:", load_info.missing_keys)
-        print("Unexpected:", load_info.unexpected_keys)
+        #print("Missing:", load_info.missing_keys)
+        #print("Unexpected:", load_info.unexpected_keys)
     vision_dset =  False
     print(y_dim)
     print(args.task)
