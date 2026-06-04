@@ -149,6 +149,7 @@ class imgClassifier(nn.Module):
         
     def forward(self, img):
         #For the image data
+        print(f"img shape: {img.shape}, dtype: {img.dtype}")
         img = self.conv0(img)
         img = self.conv1(img)
         img = self.bn1(img)

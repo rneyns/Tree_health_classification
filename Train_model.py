@@ -57,7 +57,7 @@ if __name__ == "__main__":
     print("Selected device:", device)
 
     # Set environment variables to avoid the CUDNN internal error
-    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.deterministic = False
     torch.backends.cudnn.benchmark = True
 
     # 1) Load the data
