@@ -257,7 +257,7 @@ class TabAttention(nn.Module):
         self.norm = nn.LayerNorm(num_continuous, dtype=torch.float64)
         self.num_continuous = num_continuous
         self.dim = dim
-        self.nbands = 8
+        self.n_bands = 8
         self.cont_embeddings = cont_embeddings
         self.attentiontype = attentiontype
 
