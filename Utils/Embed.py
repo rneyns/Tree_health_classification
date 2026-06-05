@@ -262,6 +262,9 @@ class Embedding(nn.Module):
         var_idx_true = var_idx.clone()
         if not self.use_space:
             var_idx = torch.zeros_like(var_idx)
+        assert var_idx.max() < self.space_emb.num_embeddings, \
+            f"var_idx out of bounds: max={var_idx.max()}, num_embeddings={self.space_emb.num_embeddings}"
+        print(f"var_idx range: [{var_idx.min()}, {var_idx.max()}], space_emb size: {self.space_emb.num_embeddings}")
         space_emb = self.space_emb(var_idx)
 
         return val_time_emb, space_emb, var_idx_true, mask
