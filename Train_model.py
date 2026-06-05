@@ -16,7 +16,10 @@ Created: Tue Sep 19 15:07:11 2023
 """
 
 if __name__ == "__main__":
+
     import os
+
+    os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
 
 
@@ -37,7 +40,7 @@ if __name__ == "__main__":
     import wandb
 
     print(f"The benchmark setting is on: {torch.backends.cudnn.benchmark}")
-    torch.backends.cudnn.benchmark = True
+    torch.backends.cudnn.benchmark = False
     print(f"The benchmark setting after change is on: {torch.backends.cudnn.benchmark}")
     args = get_arguments()
 
