@@ -6,7 +6,7 @@
 
 #SBATCH --mem-per-gpu=24gb
 
-#SBATCH --time=1:00:00
+#SBATCH --time=12:00:00
 
 #SBATCH --partition=ampere_gpu
 
