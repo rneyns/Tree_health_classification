@@ -87,7 +87,7 @@ class SAINT(nn.Module):
             nfeats = self.num_categories + num_continuous
         elif self.cont_embeddings == 'temporal':
             self.embedding = Embedding(
-                d_y=4,
+                d_y=8,
                 d_x=1,
                 d_model=self.dim,
                 time_emb_dim=6,  ## what is time_emb_dim??
@@ -97,7 +97,7 @@ class SAINT(nn.Module):
             input_size = (dim * self.num_categories) + (dim * num_continuous)
         elif self.cont_embeddings == 'spatio-temporal':
             self.embedding = Embedding(
-                d_y=4,
+                d_y=8,
                 d_x=d_x,
                 d_model=self.dim,
                 time_emb_dim=6,  ## what is time_emb_dim??
