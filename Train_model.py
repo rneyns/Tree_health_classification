@@ -30,7 +30,7 @@ if __name__ == "__main__":
 
     from get_arguments import get_arguments
     from Dataloader_init import dataloader_init
-    from Training import train_epoch, train_epoch_tab, train_epoch_img
+    from Training import train_epoch, train_epoch_tab, train_epoch_img, train_epoch_proto
     from Utils import valid
     from Model import initialize_model
     from models import SAINT
@@ -177,7 +177,7 @@ if __name__ == "__main__":
                     p.requires_grad = True
                 print("Backbone unfrozen!")
 
-            train_epoch(args, epoch, model, device, trainloader, optimizer, scheduler, ratio_a=None)
+            train_epoch_proto(args, epoch, model, device, trainloader, optimizer, scheduler, ratio_a=None)
 
             model.eval()
             with torch.no_grad():

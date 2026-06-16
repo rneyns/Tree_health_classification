@@ -356,4 +356,147 @@ def make_predictions(model, dataloader, device):
             ys.extend(y_outs.cpu().numpy())
     return idxs, ys, np.array(all_predictions)
 
+def train_epoch_proto(args, epoch, model, device, dataloader, optimizer, scheduler, ratio_a, writer=None):
+    criterion = nn.CrossEntropyLoss()
+    softmax = nn.Softmax(dim=1)
+    relu = nn.ReLU(inplace=True)
+    tanh = nn.Tanh()
+
+    model.train()
+    print("Start training ... ")
+
+    _loss = 0
+    _loss_a = 0
+    _loss_v = 0
+
+    _a_angle = 0
+    _v_angle = 0
+    _a_diff = 0
+    _v_diff = 0
+    _ratio_a = 0
+    _ratio_img = 0.0  # proto ratio monitor
+
+    for step, batch in enumerate(dataloader):
+        # Unpack
+        image, ids, DOY, x_categ, x_cont, y_gts = batch
+
+        # Move + cast
+        image   = image.to(device, non_blocking=True).float()
+        DOY     = DOY.to(device, non_blocking=True).float()
+        x_categ = x_categ.to(device, non_blocking=True).float()
+        x_cont  = x_cont.to(device, non_blocking=True).float()
+        label   = y_gts.to(device, non_blocking=True).long().view(-1)
+
+        optimizer.zero_grad(set_to_none=True)
+
+        # Forward pass
+        _, x_categ_enc, x_cont_enc, con_mask = embed_data_mask(x_categ, x_cont, model.tab_net, False, DOY=DOY)
+        a, v, out = model(image, x_categ_enc, x_cont_enc, con_mask)
+        # a = image branch logits [B, C]
+        # v = tabular branch logits [B, C]
+
+        if args.fusion_method == 'sum':
+            out_v = (torch.mm(v, torch.transpose(model.fusion_module.ffc_y.weight, 0, 1)) +
+                     model.fusion_module.ffc_y.bias)
+            out_a = (torch.mm(a, torch.transpose(model.fusion_module.ffc_x.weight, 0, 1)) +
+                     model.fusion_module.ffc_x.bias)
+        elif args.fusion_method == 'concat':
+            weight_size = model.fusion_module.ffc_out.weight.size(1)
+            out_v = (torch.mm(v, torch.transpose(model.fusion_module.ffc_out.weight[:, weight_size // 2:], 0, 1))
+                     + model.fusion_module.ffc_out.bias / 2)
+            out_a = (torch.mm(a, torch.transpose(model.fusion_module.ffc_out.weight[:, :weight_size // 2], 0, 1))
+                     + model.fusion_module.ffc_out.bias / 2)
+        elif args.fusion_method == 'film' or args.fusion_method == 'gated':
+            out_v = out
+            out_a = out
+
+        # Loss calculation
+        loss   = criterion(out, label)
+        loss_v = criterion(v, label)
+        loss_a = criterion(a, label)
+
+        loss.backward()
+
+        # --- OGM / OGM_GE modulation (unchanged) ---
+        if args.modulation == 'Normal':
+            score_v = sum([softmax(out_v)[i][label[i]] for i in range(out_v.size(0))])
+            score_a = sum([softmax(out_a)[i][label[i]] for i in range(out_a.size(0))])
+            ratio_v = score_v / score_a
+            ratio_a = 1 / ratio_v
+
+        else:
+            score_v = sum([softmax(out_v)[i][label[i]] for i in range(out_v.size(0))])
+            score_a = sum([softmax(out_a)[i][label[i]] for i in range(out_a.size(0))])
+            ratio_v = score_v / score_a
+            ratio_a = 1 / ratio_v
+
+            if ratio_v > 1:
+                coeff_v = 1 - tanh(args.alpha * relu(ratio_v))
+                coeff_a = 1
+                acc_v   = 1
+                acc_a   = 1 + tanh(args.alpha * relu(ratio_v))
+            else:
+                coeff_a = 1 - tanh(args.alpha * relu(ratio_a))
+                coeff_v = 1
+                acc_a   = 1
+                acc_v   = 1 + tanh(args.alpha * relu(ratio_a))
+
+            if args.modulation_starts <= epoch <= args.modulation_ends:
+                for name, parms in model.named_parameters():
+                    layer = str(name).split('.')[0]
+                    if parms.grad is not None:
+                        if 'img' in layer and len(parms.grad.size()) == 4:
+                            if args.modulation == 'OGM_GE':
+                                parms.grad = parms.grad * coeff_v + \
+                                             torch.zeros_like(parms.grad).normal_(0, parms.grad.std().item() + 1e-8)
+                            elif args.modulation == 'OGM':
+                                parms.grad *= coeff_v
+                            elif args.modulation == 'Acc':
+                                parms.grad *= acc_v
+                        elif 'ffc' not in layer and len(parms.grad.size()) == 4:
+                            if args.modulation == 'OGM_GE':
+                                parms.grad = parms.grad * coeff_a + \
+                                             torch.zeros_like(parms.grad).normal_(0, parms.grad.std().item() + 1e-8)
+                            elif args.modulation == 'OGM':
+                                parms.grad *= coeff_a
+                            elif args.modulation == 'Acc':
+                                parms.grad *= acc_a
+
+        optimizer.step()
+
+        # --- Prototype ratio monitoring ---
+        # score_img: how confident the image branch is on the correct class
+        # score_tab: same for the tabular branch
+        # ratio_img > 1 → image branch is dominant, < 1 → tabular is dominant
+        with torch.no_grad():
+            score_img = sum(softmax(a)[i][label[i]] for i in range(a.size(0)))
+            score_tab = sum(softmax(v)[i][label[i]] for i in range(v.size(0)))
+            ratio_img = score_img / (score_tab + 1e-8)
+            _ratio_img += ratio_img.item()
+
+        # Metrics tracking
+        _loss   += loss.item()
+        _loss_a += loss_a.item()
+        _loss_v += loss_v.item()
+
+        if step % 10 == 0:
+            wandb.log({
+                "loss":         loss.item(),
+                "loss_img":     loss_a.item(),
+                "loss_tab":     loss_v.item(),
+                "ratio_img":    score_img.item(),
+                "ratio_tab":    score_tab.item(),
+                "ratio_img_tab": ratio_img.item(),  # >1 img dominant, <1 tab dominant
+                "epoch":        epoch,
+            })
+
+    return (
+        _loss    / len(dataloader),
+        _loss_a  / len(dataloader),
+        _loss_v  / len(dataloader),
+        _a_angle / len(dataloader),
+        _v_angle / len(dataloader),
+        _ratio_img / len(dataloader),   # replaces the old _ratio_a placeholder
+    )
+
 
